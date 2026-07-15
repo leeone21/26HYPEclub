@@ -17,7 +17,7 @@
   /* 텍스트 — 대비 강화 */
   --color-text-primary: #F5F5F5;
   --color-text-secondary: #B8B8B8;  /* #A8A8A8 → 더 밝게 */
-  --color-text-muted: #707070;      /* #606060 → 더 밝게 */
+  --color-text-muted: #999999;      /* #707070 → 가독성 개선 */
 
   /* 경계선 */
   --color-border: #2E2E2E;

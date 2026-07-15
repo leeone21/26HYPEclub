@@ -52,7 +52,7 @@ export default function Program() {
         {/* 시간표 — 팀버핏 스타일 그리드 */}
         <div className="mb-12">
           <div className="mb-6">
-            <p className="text-xs font-bold tracking-[0.2em] uppercase" style={{ color: "var(--color-text-muted)" }}>
+            <p className="text-xs font-bold tracking-[0.2em] uppercase" style={{ color: "var(--color-brand-accent)" }}>
               Time Table
             </p>
             <h3 className="font-black text-4xl text-text-primary">시간표</h3>
@@ -225,7 +225,7 @@ export default function Program() {
                 className="p-5 rounded-2xl"
                 style={{ background: "var(--color-bg-surface-2)" }}
               >
-                <p className="text-text-secondary leading-relaxed mb-3 text-sm">
+                <p className="text-text-primary leading-relaxed mb-3 text-sm">
                   &ldquo;{item.text}&rdquo;
                 </p>
                 <div className="flex items-center gap-2 text-text-muted text-xs">
