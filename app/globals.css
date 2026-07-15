@@ -2,26 +2,132 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── 디자인 토큰 ─────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* 브랜드 컬러 — 라임그린 */
+  --color-brand-accent: #C8FF00;
+  --color-brand-accent-hover: #B0E600;
+  --color-brand-accent-muted: rgba(200, 255, 0, 0.10);
+
+  /* 배경 레이어 (다크 베이스) */
+  --color-bg-base: #0A0A0A;
+  --color-bg-surface: #161616;
+  --color-bg-surface-2: #222222;
+
+  /* 텍스트 — 대비 강화 */
+  --color-text-primary: #F5F5F5;
+  --color-text-secondary: #B8B8B8;  /* #A8A8A8 → 더 밝게 */
+  --color-text-muted: #707070;      /* #606060 → 더 밝게 */
+
+  /* 경계선 */
+  --color-border: #2E2E2E;
+
+  /* 폰트 */
+  --font-heading: "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont,
+    "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  --font-body: "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont,
+    "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ─── 섹션 진입 애니메이션 ───────────────────── */
+.section-hidden {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.section-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── 기본 리셋 ───────────────────────────────── */
+@layer base {
+  html {
+    background-color: var(--color-bg-base);
+    color: var(--color-text-primary);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.7;          /* 본문 행간 */
+    word-break: keep-all;      /* 한국어 단어 단위 줄바꿈 */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-bg-base);
+    color: var(--color-text-primary);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-heading);
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    word-break: keep-all;
+  }
+
+  p {
+    word-break: keep-all;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--color-bg-base); }
+  ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 2px; }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-accent);
+    outline-offset: 2px;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
+/* ─── 컴포넌트 유틸리티 ───────────────────────── */
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  /* 섹션 공통 패딩 — 모바일 py-12(48px), 데스크톱 py-20(80px) */
+  .section-padding {
+    @apply px-5 py-12 md:px-12 md:py-20;
+  }
+
+  .text-accent {
+    color: var(--color-brand-accent);
+  }
+
+  .img-placeholder {
+    @apply flex items-center justify-center text-sm;
+    background: var(--color-bg-surface-2);
+    color: var(--color-text-muted);
+    border: 1px dashed var(--color-border);
+  }
+
+  /* CTA 버튼 */
+  .btn-cta {
+    @apply inline-flex items-center justify-center gap-2 font-bold rounded-full
+           transition-all duration-200 active:scale-95;
+    background-color: var(--color-brand-accent);
+    color: #0A0A0A;
+    font-size: 1rem;
+    letter-spacing: -0.01em;
+  }
+  .btn-cta:hover {
+    background-color: var(--color-brand-accent-hover);
+  }
+
+  /* 보조 버튼 */
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 font-semibold rounded-full
+           border transition-all duration-200;
+    border-color: var(--color-brand-accent);
+    color: var(--color-brand-accent);
+  }
+  .btn-outline:hover {
+    background-color: var(--color-brand-accent-muted);
   }
 }
