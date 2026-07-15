@@ -8,6 +8,7 @@ const LABEL = "하이프트레이닝클럽";
 
 declare global {
   interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     kakao: any;
   }
 }

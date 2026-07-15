@@ -2,26 +2,6 @@
 
 import Image from "next/image";
 
-const SCHEDULE = [
-  {
-    days: "월 · 수",
-    name: "하이브리드",
-    desc: "근력 + 유산소",
-    times: ["저녁 7시", "저녁 8시", "저녁 9시"],
-  },
-  {
-    days: "화 · 목",
-    name: "웨이트",
-    desc: "바디쉐이핑, 근비대",
-    times: ["저녁 7시", "저녁 8시", "저녁 9시"],
-  },
-  {
-    days: "금",
-    name: "스쿼트X",
-    desc: "맞춤형 트레이닝",
-    times: ["저녁 7시", "저녁 8시"],
-  },
-];
 
 const GALLERY_ITEMS = [
   { id: 1, src: "/images/gym-01.jpg", alt: "로잉 머신으로 유산소 수업" },
