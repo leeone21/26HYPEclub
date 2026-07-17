@@ -55,12 +55,9 @@ export default function Location() {
             <span className="text-accent text-lg shrink-0">📞</span>
             <div>
               <p className="text-text-secondary text-xs mb-1 uppercase tracking-wide">문의</p>
-              <a
-                href="tel:01081324550"
-                className="text-text-primary font-medium hover:text-accent transition-colors"
-              >
+              <p className="text-text-primary font-medium">
                 010-8132-4550
-              </a>
+              </p>
             </div>
           </div>
         </div>

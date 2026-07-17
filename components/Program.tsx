@@ -7,8 +7,6 @@ const GALLERY_ITEMS = [
   { id: 1, src: "/images/gym-01.jpg", alt: "로잉 머신으로 유산소 수업" },
   { id: 2, src: "/images/gym-02.jpg", alt: "수업 브리핑 중인 코치" },
   { id: 3, src: "/images/gym-03.jpg", alt: "데드리프트 자세 교정" },
-  { id: 4, src: "/images/gym-04.jpg", alt: "그룹 컨디셔닝 수업" },
-  { id: 5, src: "/images/gym-05.jpg", alt: "바벨 벤치프레스" },
 ];
 
 const TESTIMONIALS = [
@@ -162,8 +160,7 @@ export default function Program() {
 
         {/* 갤러리 */}
         <div className="mb-12">
-          <h3 className="text-text-primary font-bold text-xl mb-2">이런 분위기입니다</h3>
-          <p className="text-text-muted text-sm mb-6">글보다 사진이 설명해줄 거예요</p>
+          <h3 className="text-text-primary font-bold text-xl mb-6">이런 분위기입니다</h3>
           <div className="grid grid-cols-2 gap-3">
             {/* 첫 번째 사진: 세로로 2칸 차지 */}
             <div className="row-span-2 relative rounded-2xl overflow-hidden" style={{ minHeight: "320px" }}>
@@ -202,17 +199,6 @@ export default function Program() {
           >
             브라우저가 동영상 재생을 지원하지 않습니다.
           </video>
-        </div>
-
-        {/* 커뮤니티 블록 */}
-        <div
-          className="rounded-2xl p-6 mb-12"
-          style={{ background: "var(--color-brand-accent-muted)", border: "1px solid var(--color-brand-accent)" }}
-        >
-          <p className="text-text-primary text-lg leading-relaxed">
-            수업만 듣고 가도 됩니다.<br />
-            <span className="text-text-secondary">같이 운동하다 보면 자연스럽게 친해지고요.</span>
-          </p>
         </div>
 
         {/* 후기 */}

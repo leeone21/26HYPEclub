@@ -49,7 +49,7 @@ export default function Problem() {
             예약하고 오면, 운동 끝.
           </p>
           <p className="text-text-secondary text-base leading-relaxed">
-            프로그램은 스포츠의학 석사 대표와 트레이닝 전문가 헤드코치가 짭니다.
+            프로그램은 스포츠의학 석사 대표와 트레이닝 전문가 헤드코치가 설계합니다.
             고민 없이 오시면 됩니다.
           </p>
         </div>

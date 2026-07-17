@@ -1,7 +1,12 @@
 "use client";
 
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { getAvailableDates, getTimeSlotsForDate } from "@/lib/schedule";
+
+interface SlotStatus {
+  time: string;
+  isClosed: boolean;
+}
 
 interface FormState {
   name: string;
@@ -37,11 +42,29 @@ export default function BookingForm({
   const [errorMsg, setErrorMsg] = useState("");
   const hasStarted = useRef(false);
 
+  const [slotStatuses, setSlotStatuses] = useState<SlotStatus[]>([]);
+  const [noticeText, setNoticeText] = useState("");
+
   const dateChips = useMemo(() => getAvailableDates(), []);
   const timeSlots = useMemo(
     () => (form.selectedDate ? getTimeSlotsForDate(form.selectedDate) : []),
     [form.selectedDate]
   );
+
+  useEffect(() => {
+    fetch("/api/admin/settings")
+      .then((r) => r.json())
+      .then((d) => { if (d.success) setNoticeText(d.settings["notice-text"] ?? ""); })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!form.selectedDate) return;
+    fetch(`/api/admin/slots/override?date=${form.selectedDate}`)
+      .then((r) => r.json())
+      .then((d) => { if (d.success) setSlotStatuses(d.slots); })
+      .catch(() => {});
+  }, [form.selectedDate]);
 
   const handlePhoneChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -166,6 +189,19 @@ export default function BookingForm({
           원하는 날짜와 시간을 선택하세요.
         </p>
 
+        {noticeText && (
+          <div
+            className="mb-6 px-4 py-3 rounded-xl text-sm"
+            style={{
+              background: "rgba(200,255,0,0.08)",
+              border: "1px solid rgba(200,255,0,0.3)",
+              color: "var(--color-brand-accent)",
+            }}
+          >
+            {noticeText}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6" noValidate>
           {/* 이름 */}
           <div>
@@ -194,12 +230,7 @@ export default function BookingForm({
             </label>
             <div className="flex items-center gap-2">
               {/* 010 고정 */}
-              <div
-                className="rounded-xl px-4 py-3.5 text-text-muted border text-base select-none shrink-0"
-                style={{ background: "var(--color-bg-surface)", borderColor: "var(--color-border)" }}
-              >
-                010
-              </div>
+              <span className="text-text-primary font-medium shrink-0 text-base">010</span>
               <span className="text-text-muted">-</span>
               <input
                 type="tel"
@@ -306,23 +337,41 @@ export default function BookingForm({
               ) : (
                 timeSlots.map((slot) => {
                   const isSelected = form.selectedTime === slot.value;
+                  const slotStatus = slotStatuses.find((s) => s.time === slot.value);
+                  const isClosed = slotStatus?.isClosed ?? false;
                   return (
                     <button
                       key={slot.value}
                       type="button"
-                      onClick={() => handleTimeSelect(slot.value)}
-                      className="px-5 py-3 rounded-xl border text-sm font-medium transition-all active:scale-95"
+                      disabled={isClosed}
+                      onClick={() => !isClosed && handleTimeSelect(slot.value)}
+                      className="px-5 py-3 rounded-xl border text-sm font-medium transition-all active:scale-95 relative"
                       style={{
-                        background: isSelected
+                        background: isClosed
+                          ? "var(--color-bg-surface)"
+                          : isSelected
                           ? "var(--color-brand-accent)"
                           : "var(--color-bg-surface)",
-                        borderColor: isSelected
+                        borderColor: isClosed
+                          ? "var(--color-border)"
+                          : isSelected
                           ? "var(--color-brand-accent)"
                           : "var(--color-border)",
-                        color: isSelected ? "#0A0A0A" : "var(--color-text-primary)",
+                        color: isClosed
+                          ? "var(--color-text-muted)"
+                          : isSelected
+                          ? "#0A0A0A"
+                          : "var(--color-text-primary)",
+                        opacity: isClosed ? 0.5 : 1,
+                        cursor: isClosed ? "not-allowed" : "pointer",
                       }}
                     >
                       {slot.label}
+                      {isClosed && (
+                        <span className="block text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+                          마감
+                        </span>
+                      )}
                     </button>
                   );
                 })

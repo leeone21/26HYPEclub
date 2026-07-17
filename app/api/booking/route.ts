@@ -1,34 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getKV } from "@/lib/kv";
 
-// 예약 데이터 스키마 v1.1
-// v1.0 → v1.1: preferred_time(자유입력) → selected_date + selected_time(구조화)
 interface BookingRecord {
   id: string;
   created_at: string;
   version: string;
   name: string;
   contact: string;
-  selected_date: string;   // YYYY-MM-DD
-  selected_time: string;   // HH:mm (24시간제)
-  consent_agreed: boolean;
+  selected_date: string;
+  selected_time: string;
+  consent_agreed: string;
   consent_agreed_at: string;
-  source: {
-    utm_source?: string;
-    utm_medium?: string;
-    utm_campaign?: string;
-    referrer?: string;
-  };
-  meta: Record<string, unknown>;
-}
-
-function checkEnv() {
-  const required = [
-    "GOOGLE_SERVICE_ACCOUNT_EMAIL",
-    "GOOGLE_PRIVATE_KEY",
-    "GOOGLE_SPREADSHEET_ID",
-    "NOTIFICATION_EMAIL",
-  ];
-  return required.filter((key) => !process.env[key]);
+  status: string;
+  utm_source: string;
+  utm_medium: string;
+  utm_campaign: string;
+  referrer: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -36,7 +23,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, contact, selectedDate, selectedTime, consentAgreed } = body;
 
-    // 입력 유효성 검사
     if (!name || !contact || !selectedDate || !selectedTime) {
       return NextResponse.json(
         { success: false, error: "필수 항목이 누락되었습니다." },
@@ -49,8 +35,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    // 날짜 형식 기본 검증 (YYYY-MM-DD)
     if (!/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) {
       return NextResponse.json(
         { success: false, error: "올바른 날짜 형식이 아닙니다." },
@@ -58,49 +42,71 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const kv = await getKV();
+
+    // 전체 예약 중단 여부 확인
+    const paused = await kv.get("settings:booking-paused");
+    if (paused === "1") {
+      return NextResponse.json(
+        { success: false, error: "현재 예약이 일시 중단되었습니다. 잠시 후 다시 시도해주세요." },
+        { status: 503 }
+      );
+    }
+
+    // 휴일 확인
+    const isHoliday = await kv.sismember("holidays", selectedDate);
+    if (isHoliday) {
+      return NextResponse.json(
+        { success: false, error: "선택하신 날짜는 예약이 불가합니다." },
+        { status: 400 }
+      );
+    }
+
+    // 슬롯 수동 마감 확인
+    const slotOverride = await kv.get(`slot-override:${selectedDate}:${selectedTime}`);
+    if (slotOverride === "closed") {
+      return NextResponse.json(
+        { success: false, error: "선택하신 시간은 마감되었습니다." },
+        { status: 409 }
+      );
+    }
+
+    // 슬롯 정원 확인
+    const maxStr = await kv.get("settings:max-per-slot");
+    const max = parseInt(maxStr ?? "3", 10);
+    const slotKey = `slot:${selectedDate}:${selectedTime}`;
+    const currentCount = await kv.scard(slotKey);
+    if (currentCount >= max) {
+      return NextResponse.json(
+        { success: false, error: "선택하신 시간은 마감되었습니다.", code: "SLOT_FULL" },
+        { status: 409 }
+      );
+    }
+
     const now = new Date().toISOString();
+    const id = crypto.randomUUID();
 
     const record: BookingRecord = {
-      id: crypto.randomUUID(),
+      id,
       created_at: now,
       version: "1.1",
       name: name.trim(),
       contact: contact.trim(),
       selected_date: selectedDate,
       selected_time: selectedTime,
-      consent_agreed: consentAgreed,
+      consent_agreed: String(consentAgreed),
       consent_agreed_at: now,
-      source: {
-        utm_source: body.utm_source,
-        utm_medium: body.utm_medium,
-        utm_campaign: body.utm_campaign,
-        referrer: body.referrer,
-      },
-      meta: {},
+      status: "confirmed",
+      utm_source: body.utm_source ?? "",
+      utm_medium: body.utm_medium ?? "",
+      utm_campaign: body.utm_campaign ?? "",
+      referrer: body.referrer ?? "",
     };
 
-    // ── 환경변수 미설정 시 개발 모드 ──────────────────────
-    const missingEnv = checkEnv();
-    if (missingEnv.length > 0) {
-      console.log("[BOOKING][DEV] 환경변수 미설정:", missingEnv);
-      console.log("[BOOKING][DEV] 예약 데이터:", record);
-      return NextResponse.json({
-        success: true,
-        message: "예약이 완료되었습니다. (개발 모드 — 실제 저장/알림 미작동)",
-        dev_note: `미설정 환경변수: ${missingEnv.join(", ")}`,
-      });
-    }
-
-    // ── TODO: Google Sheets 저장 ──────────────────────────
-    // await saveToGoogleSheets(record);
-    // Sheets 컬럼 순서 (v1.1):
-    //   id | created_at | version | name | contact |
-    //   selected_date | selected_time |
-    //   consent_agreed | consent_agreed_at |
-    //   utm_source | utm_medium | utm_campaign | referrer | meta
-
-    // ── TODO: 이메일 알림 ─────────────────────────────────
-    // await sendNotificationEmail(record);
+    // KV에 저장
+    await kv.hset(`booking:${id}`, record as unknown as Record<string, string>);
+    await kv.sadd(slotKey, id);
+    await kv.rpush(`bookings:by-date:${selectedDate}`, id);
 
     return NextResponse.json({ success: true, message: "예약이 완료되었습니다." });
   } catch (error) {

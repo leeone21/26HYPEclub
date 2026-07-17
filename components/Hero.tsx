@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 
 interface HeroProps {
   onCtaClick?: () => void;
@@ -7,9 +8,15 @@ interface HeroProps {
 export default function Hero({ onCtaClick }: HeroProps) {
   return (
     <section className="relative min-h-screen flex flex-col justify-center overflow-hidden">
-      {/* 배경 이미지 플레이스홀더 */}
-      <div className="absolute inset-0 img-placeholder">
-        <span>[사진: 그룹PT 분위기 대표 이미지 — 풀블리드 배경]</span>
+      {/* 배경 이미지 */}
+      <div className="absolute inset-0">
+        <Image
+          src="/images/gym-01.jpg"
+          alt="하이프트레이닝클럽 수업 분위기"
+          fill
+          className="object-cover"
+          priority
+        />
       </div>
 
       {/* 어두운 오버레이 */}
