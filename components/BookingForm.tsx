@@ -46,6 +46,26 @@ export default function BookingForm({
   const [noticeText, setNoticeText] = useState("");
 
   const dateChips = useMemo(() => getAvailableDates(), []);
+
+  const weekGroups = useMemo(() => {
+    const WEEK_LABELS = ["이번 주", "다음 주", "2주 후", "3주 후"];
+    const groups: { label: string; key: string; chips: typeof dateChips }[] = [];
+    dateChips.forEach((chip) => {
+      const d = new Date(chip.date + "T00:00:00");
+      const dow = d.getDay();
+      const diff = dow === 0 ? -6 : 1 - dow;
+      const monday = new Date(d);
+      monday.setDate(d.getDate() + diff);
+      const weekKey = `${monday.getFullYear()}-${monday.getMonth()}-${monday.getDate()}`;
+      let group = groups.find((g) => g.key === weekKey);
+      if (!group) {
+        group = { label: WEEK_LABELS[groups.length] ?? `+${groups.length}주 후`, key: weekKey, chips: [] };
+        groups.push(group);
+      }
+      group.chips.push(chip);
+    });
+    return groups;
+  }, [dateChips]);
   const timeSlots = useMemo(
     () => (form.selectedDate ? getTimeSlotsForDate(form.selectedDate) : []),
     [form.selectedDate]
@@ -262,50 +282,52 @@ export default function BookingForm({
             </div>
           </div>
 
-          {/* 날짜 선택 — 가로 스크롤 칩 */}
+          {/* 날짜 선택 — 주차 그룹 */}
           <div>
             <label className="block text-text-secondary text-sm mb-3">
               체험 날짜 <span className="text-accent">*</span>
-              <span className="text-text-muted ml-2 text-xs">(평일만 선택 가능)</span>
             </label>
-            <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
-              {dateChips.map((chip) => {
-                const isSelected = form.selectedDate === chip.date;
-                return (
-                  <button
-                    key={chip.date}
-                    type="button"
-                    disabled={chip.disabled}
-                    onClick={() => handleDateSelect(chip.date)}
-                    className="flex flex-col items-center shrink-0 w-14 py-3 rounded-xl border transition-all text-center"
-                    style={{
-                      background: isSelected
-                        ? "var(--color-brand-accent)"
-                        : chip.disabled
-                        ? "var(--color-bg-surface)"
-                        : "var(--color-bg-surface)",
-                      borderColor: isSelected
-                        ? "var(--color-brand-accent)"
-                        : "var(--color-border)",
-                      opacity: chip.disabled ? 0.35 : 1,
-                      cursor: chip.disabled ? "not-allowed" : "pointer",
-                    }}
-                  >
-                    <span
-                      className="text-xs font-semibold mb-0.5"
-                      style={{ color: isSelected ? "#0A0A0A" : "var(--color-text-secondary)" }}
-                    >
-                      {chip.dayLabel}
-                    </span>
-                    <span
-                      className="text-sm font-bold"
-                      style={{ color: isSelected ? "#0A0A0A" : "var(--color-text-primary)" }}
-                    >
-                      {chip.dateLabel}
-                    </span>
-                  </button>
-                );
-              })}
+            <div className="space-y-4">
+              {weekGroups.map((group) => (
+                <div key={group.key}>
+                  <p className="text-xs mb-2" style={{ color: "var(--color-text-muted)" }}>
+                    {group.label}
+                  </p>
+                  <div className="flex gap-2 flex-wrap">
+                    {group.chips.map((chip) => {
+                      const isSelected = form.selectedDate === chip.date;
+                      return (
+                        <button
+                          key={chip.date}
+                          type="button"
+                          disabled={chip.disabled}
+                          onClick={() => handleDateSelect(chip.date)}
+                          className="flex flex-col items-center w-14 py-3 rounded-xl border transition-all text-center"
+                          style={{
+                            background: isSelected ? "var(--color-brand-accent)" : "var(--color-bg-surface)",
+                            borderColor: isSelected ? "var(--color-brand-accent)" : "var(--color-border)",
+                            opacity: chip.disabled ? 0.35 : 1,
+                            cursor: chip.disabled ? "not-allowed" : "pointer",
+                          }}
+                        >
+                          <span
+                            className="text-xs font-semibold mb-0.5"
+                            style={{ color: isSelected ? "#0A0A0A" : "var(--color-text-secondary)" }}
+                          >
+                            {chip.dayLabel}
+                          </span>
+                          <span
+                            className="text-sm font-bold"
+                            style={{ color: isSelected ? "#0A0A0A" : "var(--color-text-primary)" }}
+                          >
+                            {chip.dateLabel}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

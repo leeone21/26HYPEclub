@@ -30,22 +30,30 @@ export function getAvailableDates(): DateChip[] {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  for (let i = startOffsetDays; i <= endOffsetDays; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
+  // 이번 주 월요일부터 시작
+  const todayDow = today.getDay();
+  const daysToMonday = todayDow === 0 ? -6 : 1 - todayDow;
+  const startDate = new Date(today);
+  startDate.setDate(today.getDate() + Math.min(daysToMonday, startOffsetDays));
+  const endDate = new Date(today);
+  endDate.setDate(today.getDate() + endOffsetDays);
+
+  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
 
     const dow = d.getDay(); // 0=일, 6=토
     const dateStr = toLocalDateString(d);
 
     const isWeekend = dow === 0 || dow === 6;
+    if (isWeekend) continue;
+
+    const isPast = d < today;
     const isHoliday = holidays.has(dateStr);
-    const disabled = isWeekend || isHoliday;
 
     chips.push({
       date: dateStr,
       dayLabel: DAY_LABELS[dow],
       dateLabel: `${d.getMonth() + 1}/${d.getDate()}`,
-      disabled,
+      disabled: isPast || isHoliday,
     });
   }
 
