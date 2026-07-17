@@ -13,10 +13,6 @@ function getTimesForDay(dayOfWeek: number) {
   return TIMES;
 }
 
-function randomItem<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
 // 결정적 랜덤 (seed 기반)
 function seededRandom(seed: number) {
   const x = Math.sin(seed + 1) * 10000;
