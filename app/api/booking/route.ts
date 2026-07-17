@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getKV } from "@/lib/kv";
+import { appendBookingToSheet } from "@/lib/sheets";
 
 interface BookingRecord {
   id: string;
@@ -107,6 +108,11 @@ export async function POST(request: NextRequest) {
     await kv.hset(`booking:${id}`, record as unknown as Record<string, string>);
     await kv.sadd(slotKey, id);
     await kv.rpush(`bookings:by-date:${selectedDate}`, id);
+
+    // Google Sheets에 저장 (실패해도 예약은 완료 처리)
+    appendBookingToSheet(record).catch((err) =>
+      console.error("[SHEETS] 저장 오류:", err)
+    );
 
     return NextResponse.json({ success: true, message: "예약이 완료되었습니다." });
   } catch (error) {

@@ -910,10 +910,20 @@ export default function AdminPage() {
         {/* ─── 슬롯 관리 ───────────────────────────────────────── */}
         {tab === "slots" && (
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => { const d = new Date(slotDate); d.setDate(d.getDate() - 1); setSlotDate(toLocalDateStr(d)); }}
+                className="rounded-xl px-3 py-2.5 text-sm border transition-colors"
+                style={{ background: "var(--color-bg-surface)", borderColor: "var(--color-border)", color: "var(--color-text-primary)" }}
+              >{"<"}</button>
               <input type="date" value={slotDate} onChange={(e) => setSlotDate(e.target.value)}
                 className="rounded-xl px-4 py-2.5 text-sm border outline-none"
                 style={{ background: "var(--color-bg-surface)", borderColor: "var(--color-border)", color: "var(--color-text-primary)" }} />
+              <button
+                onClick={() => { const d = new Date(slotDate); d.setDate(d.getDate() + 1); setSlotDate(toLocalDateStr(d)); }}
+                className="rounded-xl px-3 py-2.5 text-sm border transition-colors"
+                style={{ background: "var(--color-bg-surface)", borderColor: "var(--color-border)", color: "var(--color-text-primary)" }}
+              >{">"}</button>
               <span className="text-text-muted text-sm">{formatDate(slotDate)}</span>
             </div>
             <div className="grid gap-3">
