@@ -35,8 +35,13 @@ export function getAvailableDates(): DateChip[] {
   const daysToMonday = todayDow === 0 ? -6 : 1 - todayDow;
   const startDate = new Date(today);
   startDate.setDate(today.getDate() + Math.min(daysToMonday, startOffsetDays));
-  const endDate = new Date(today);
-  endDate.setDate(today.getDate() + endOffsetDays);
+  // endOffsetDays가 속한 주의 금요일까지 연장
+  const endBase = new Date(today);
+  endBase.setDate(today.getDate() + endOffsetDays);
+  const endDow = endBase.getDay();
+  const daysToFriday = endDow === 0 ? 5 : endDow <= 5 ? 5 - endDow : 0;
+  const endDate = new Date(endBase);
+  endDate.setDate(endBase.getDate() + daysToFriday);
 
   for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
 

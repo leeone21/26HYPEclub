@@ -1,5 +1,4 @@
 "use client";
-import Image from "next/image";
 
 interface HeroProps {
   onCtaClick?: () => void;
@@ -8,19 +7,20 @@ interface HeroProps {
 export default function Hero({ onCtaClick }: HeroProps) {
   return (
     <section className="relative min-h-screen flex flex-col justify-center overflow-hidden">
-      {/* 배경 이미지 */}
+      {/* 배경 영상 */}
       <div className="absolute inset-0">
-        <Image
-          src="/images/gym-01.jpg"
-          alt="하이프트레이닝클럽 수업 분위기"
-          fill
-          className="object-cover"
-          priority
+        <video
+          src="/videos/hero.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full h-full object-cover"
         />
       </div>
 
       {/* 어두운 오버레이 */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-bg-base" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-bg-base" />
 
       {/* 콘텐츠 */}
       <div className="relative z-10 section-padding max-w-2xl mx-auto w-full pt-28">
@@ -43,10 +43,25 @@ export default function Hero({ onCtaClick }: HeroProps) {
         </h1>
 
         {/* 보조 설명 */}
-        <p className="text-text-secondary text-lg mb-10 leading-relaxed">
-          신림역 하이브리드 그룹PT.<br />
-          평일 저녁 7·8·9시, 50분.
+        <p className="text-text-primary text-xl font-semibold mb-3 leading-relaxed">
+          같이 하니까, 꾸준해집니다.
         </p>
+        <div className="flex flex-wrap gap-2 mb-10">
+          {["신림역 하이브리드 그룹PT", "평일 저녁 7·8·9시", "50분"].map((label) => (
+            <span
+              key={label}
+              className="text-sm font-semibold px-3 py-1.5 rounded-full"
+              style={{
+                background: "rgba(255,255,255,0.15)",
+                color: "#fff",
+                border: "1px solid rgba(255,255,255,0.3)",
+                backdropFilter: "blur(4px)",
+              }}
+            >
+              {label}
+            </span>
+          ))}
+        </div>
 
         {/* CTA — 데스크톱 인라인 */}
         <div className="hidden md:flex gap-4 items-center">

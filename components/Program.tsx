@@ -81,15 +81,15 @@ export default function Program() {
                 {[
                   {
                     time: "19:00",
-                    classes: ["하이브리드", "웨이트", "하이브리드", "웨이트", "스쿼트X"],
+                    classes: ["엔진", "리프트", "하이브리드X", "리프트", "하이브리드X"],
                   },
                   {
                     time: "20:00",
-                    classes: ["하이브리드", "웨이트", "하이브리드", "웨이트", "스쿼트X"],
+                    classes: ["엔진", "리프트", "하이브리드X", "리프트", "하이브리드X"],
                   },
                   {
                     time: "21:00",
-                    classes: ["하이브리드", "웨이트", "하이브리드", "웨이트", null],
+                    classes: ["엔진", "리프트", "하이브리드X", "리프트", null],
                   },
                 ].map((row, ri) => (
                   <tr key={row.time} style={{ borderTop: ri === 0 ? undefined : "1px solid var(--color-border)" }}>
@@ -110,17 +110,15 @@ export default function Program() {
                             className="inline-block px-3 py-1.5 rounded font-black text-xs tracking-widest uppercase"
                             style={{
                               background:
-                                cls === "스쿼트X"
+                                cls === "하이브리드X"
                                   ? "var(--color-brand-accent)"
-                                  : cls === "하이브리드"
-                                  ? "var(--color-bg-surface-2)"
                                   : "#1e1e1e",
                               color:
-                                cls === "스쿼트X"
+                                cls === "하이브리드X"
                                   ? "#0A0A0A"
                                   : "var(--color-text-primary)",
                               border:
-                                cls === "스쿼트X"
+                                cls === "하이브리드X"
                                   ? "none"
                                   : "1px solid var(--color-border)",
                             }}
@@ -134,35 +132,55 @@ export default function Program() {
                     ))}
                   </tr>
                 ))}
-                {/* 금요일 안내 */}
-                <tr style={{ borderTop: "1px solid var(--color-border)" }}>
-                  <td colSpan={6} className="px-4 py-3 text-xs" style={{ color: "var(--color-text-muted)", background: "var(--color-bg-surface-2)" }}>
-                    * 금요일 스쿼트X는 19:00 · 20:00 2회만 운영 / 금요일 21시 없음
-                  </td>
-                </tr>
               </tbody>
             </table>
           </div>
+
+          {/* 클래스 설명 */}
+          <div className="mt-8">
+            <p className="font-bold text-base mb-4" style={{ color: "var(--color-text-primary)" }}>이런 수업이에요</p>
+            <div className="space-y-2.5">
+              {[
+                { name: "엔진", desc: "살 빠지고 숨 안 차는 체력을 얻을 수 있는 클래스", accent: false },
+                { name: "리프트", desc: "탄탄한 몸매와 기초 근력을 얻을 수 있는 클래스", accent: false },
+                { name: "하이브리드X", desc: "보기 좋은 근육과 지치지 않는 체력을 동시에 얻을 수 있는 클래스", accent: true },
+              ].map(({ name, desc, accent }) => (
+                <div key={name} className="flex gap-2 text-sm leading-relaxed">
+                  <span
+                    className="shrink-0 font-bold w-24"
+                    style={{ color: accent ? "var(--color-brand-accent)" : "var(--color-text-primary)" }}
+                  >
+                    {name}
+                  </span>
+                  <span style={{ color: "var(--color-text-primary)" }}>{desc}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs mt-4" style={{ color: "var(--color-text-muted)" }}>
+              * 금요일 하이브리드X는 19:00 · 20:00 2회만 운영 / 금요일 21시 없음
+            </p>
+          </div>
         </div>
 
-        {/* 헬스장 자유이용 블록 */}
-        <div
-          className="rounded-2xl p-6 mb-12"
-          style={{ background: "var(--color-bg-surface-2)", border: "1px solid var(--color-border)" }}
-        >
-          <p className="font-bold text-text-primary text-lg mb-2">
-            그룹수업 + 헬스장, 다 됩니다.
-          </p>
-          <p className="text-text-secondary text-base leading-relaxed">
-            수업 없는 날에도 헬스장은 자유롭게 이용하실 수 있습니다.
-          </p>
+        {/* 갤러리 헤딩 */}
+        <h3 className="text-text-primary font-bold text-xl mb-6">이런 분위기입니다</h3>
+
+        {/* 영상 */}
+        <div className="mb-4 flex justify-center">
+          <video
+            src="/videos/highlight2.mp4"
+            autoPlay
+            playsInline
+            muted
+            loop
+            className="rounded-2xl"
+            style={{ width: "70%", background: "var(--color-bg-surface-2)" }}
+          />
         </div>
 
         {/* 갤러리 */}
-        <div className="mb-12">
-          <h3 className="text-text-primary font-bold text-xl mb-6">이런 분위기입니다</h3>
+        <div className="mb-6">
           <div className="grid grid-cols-2 gap-3">
-            {/* 첫 번째 사진: 세로로 2칸 차지 */}
             <div className="row-span-2 relative rounded-2xl overflow-hidden" style={{ minHeight: "320px" }}>
               <Image
                 src={GALLERY_ITEMS[0].src}
@@ -186,19 +204,24 @@ export default function Program() {
           </div>
         </div>
 
-        {/* 영상 */}
-        <div className="mb-12">
-          <video
-            src="/videos/highlight2.mov"
-            controls
-            playsInline
-            muted
-            loop
-            className="w-full rounded-2xl"
-            style={{ background: "var(--color-bg-surface-2)" }}
-          >
-            브라우저가 동영상 재생을 지원하지 않습니다.
-          </video>
+        {/* 헬스장 자유이용 블록 */}
+        <div className="relative rounded-2xl overflow-hidden mb-12" style={{ height: "220px" }}>
+          <Image
+            src="/images/gym-facility.jpg"
+            alt="헬스장 시설"
+            fill
+            className="object-cover"
+            sizes="100vw"
+          />
+          <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.5)" }} />
+          <div className="absolute inset-0 flex flex-col justify-center p-6">
+            <p className="font-bold text-white text-lg mb-2">
+              그룹수업 + 헬스장, 다 됩니다.
+            </p>
+            <p className="text-white/80 text-base leading-relaxed">
+              수업 없는 날에도 헬스장은 자유롭게 이용하실 수 있습니다.
+            </p>
+          </div>
         </div>
 
         {/* 후기 */}

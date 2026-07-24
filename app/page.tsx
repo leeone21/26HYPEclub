@@ -7,10 +7,11 @@ import Problem from "@/components/Problem";
 import Program from "@/components/Program";
 import Pricing from "@/components/Pricing";
 import Location from "@/components/Location";
+import FAQ from "@/components/FAQ";
 import BookingForm from "@/components/BookingForm";
 import StickyCtaBar from "@/components/StickyCtaBar";
 
-const SECTIONS = ["hero", "problem", "program", "pricing", "location", "booking"] as const;
+const SECTIONS = ["hero", "problem", "program", "pricing", "location", "faq", "booking"] as const;
 
 export default function Home() {
   const bookingRef = useRef<HTMLDivElement>(null);
@@ -80,6 +81,11 @@ export default function Home() {
       {/* Location */}
       <div id="section-location">
         <Location />
+      </div>
+
+      {/* FAQ */}
+      <div id="section-faq">
+        <FAQ />
       </div>
 
       {/* BookingForm */}

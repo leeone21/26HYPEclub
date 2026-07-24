@@ -1,9 +1,9 @@
 "use client";
 
 const PAIN_POINTS = [
-  { text: "헬스장 가도 뭘 해야 할지 모르겠고" },
-  { text: "유튜브 따라 해도 맞게 하는 건지 모르겠고" },
-  { text: "한 달 끊고 안 간 적, 다들 있으니까요" },
+  { text: "러닝머신 위 30분이 세 시간 같고" },
+  { text: "퇴근하면 이미 저녁이라 갈 엄두가 안 나고" },
+  { text: "혼자 하다 보면, 한 달 끊고 안 간 적 다들 있으니까요" },
 ];
 
 export default function Problem() {
