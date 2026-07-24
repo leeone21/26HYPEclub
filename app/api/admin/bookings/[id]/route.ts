@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getKV } from "@/lib/kv";
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const kv = await getKV();
   const { id } = params;
+  const permanent = new URL(request.url).searchParams.get("permanent") === "1";
 
   try {
     const record = await kv.hgetall(`booking:${id}`);
@@ -16,11 +17,17 @@ export async function DELETE(
 
     const slotKey = `slot:${record.selected_date}:${record.selected_time}`;
     await kv.srem(slotKey, id);
-    await kv.hset(`booking:${id}`, { status: "cancelled" });
+
+    if (permanent) {
+      await kv.lrem(`bookings:by-date:${record.selected_date}`, 0, id);
+      await kv.del(`booking:${id}`);
+    } else {
+      await kv.hset(`booking:${id}`, { status: "cancelled" });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("[ADMIN] 예약 취소 오류:", error);
+    console.error("[ADMIN] 예약 삭제 오류:", error);
     return NextResponse.json({ success: false, error: "서버 오류" }, { status: 500 });
   }
 }

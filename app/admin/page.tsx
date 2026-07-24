@@ -37,7 +37,7 @@ function formatDate(dateStr: string) {
 }
 
 function maskContact(contact: string) {
-  return contact.replace(/(\d{3}-\d{4})-(\d{4})/, "$1-****");
+  return contact;
 }
 
 function getWeekDates(): string[] {
@@ -583,6 +583,12 @@ export default function AdminPage() {
     await loadBookings();
   };
 
+  const handleDelete = async (id: string) => {
+    if (!confirm("이 예약을 완전히 삭제하시겠습니까? 복구할 수 없습니다.")) return;
+    await fetch(`/api/admin/bookings/${id}?permanent=1`, { method: "DELETE" });
+    await loadBookings();
+  };
+
   const handleAddBooking = async () => {
     setAddLoading(true);
     setAddError("");
@@ -888,6 +894,9 @@ export default function AdminPage() {
                             <td className="px-4 py-3">
                               {b.status === "confirmed" && (
                                 <button onClick={(e) => { e.stopPropagation(); handleCancel(b.id); }} className="text-xs hover:text-red-300 transition-colors" style={{ color: "var(--color-text-muted)" }}>취소</button>
+                              )}
+                              {b.status === "cancelled" && (
+                                <button onClick={(e) => { e.stopPropagation(); handleDelete(b.id); }} className="text-xs hover:text-red-400 transition-colors" style={{ color: "#ff6464" }}>삭제</button>
                               )}
                             </td>
                           </tr>

@@ -25,6 +25,12 @@ const mem = {
       memLists.delete(k);
     });
   },
+  async lrem(key: string, count: number, element: string): Promise<void> {
+    const list = memLists.get(key);
+    if (!list) return;
+    const next = list.filter((v) => v !== element);
+    memLists.set(key, next);
+  },
   async sadd(key: string, ...members: string[]): Promise<void> {
     if (!memSets.has(key)) memSets.set(key, new Set());
     members.forEach((m) => memSets.get(key)!.add(m));
@@ -44,6 +50,11 @@ const mem = {
   async rpush(key: string, ...values: string[]): Promise<void> {
     if (!memLists.has(key)) memLists.set(key, []);
     memLists.get(key)!.push(...values);
+  },
+  async lrem(key: string, _count: number, element: string): Promise<void> {
+    const list = memLists.get(key);
+    if (!list) return;
+    memLists.set(key, list.filter((v) => v !== element));
   },
   async lrange(key: string, start: number, stop: number): Promise<string[]> {
     const list = memLists.get(key) ?? [];
@@ -91,11 +102,11 @@ async function getKV() {
       },
       async sadd(key: string, ...members: string[]) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (kv.sadd as any)(key, members);
+        await (kv.sadd as any)(key, ...members);
       },
       async srem(key: string, ...members: string[]) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (kv.srem as any)(key, members);
+        await (kv.srem as any)(key, ...members);
       },
       async smembers(key: string) {
         return kv.smembers(key);
@@ -109,7 +120,11 @@ async function getKV() {
       },
       async rpush(key: string, ...values: string[]) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (kv.rpush as any)(key, values);
+        await (kv.rpush as any)(key, ...values);
+      },
+      async lrem(key: string, count: number, element: string) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (kv as any).lrem(key, count, element);
       },
       async lrange(key: string, start: number, stop: number) {
         return kv.lrange(key, start, stop);
