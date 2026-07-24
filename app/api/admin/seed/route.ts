@@ -6,7 +6,7 @@ const CONTACTS = ["010-1234-5678", "010-2345-6789", "010-3456-7890", "010-4567-8
 const TIMES = ["19:00", "20:00", "21:00"];
 const REASONS = ["가격", "시간대", "거리/위치", "운동 강도", "기타"];
 
-// 월·수: 하이브리드, 화·목: 웨이트, 금: 스쿼트X (금요일은 21:00 없음)
+// 월·수: 하이브리드, 화·목: 웨이트, 금: 스쿼드X (금요일은 21:00 없음)
 function getTimesForDay(dayOfWeek: number) {
   if (dayOfWeek === 5) return ["19:00", "20:00"];
   if (dayOfWeek === 0 || dayOfWeek === 6) return []; // 주말 없음

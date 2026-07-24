@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import { track } from "@vercel/analytics";
 import Hero from "@/components/Hero";
 import Problem from "@/components/Problem";
@@ -15,6 +15,7 @@ const SECTIONS = ["hero", "problem", "program", "pricing", "location", "faq", "b
 
 export default function Home() {
   const bookingRef = useRef<HTMLDivElement>(null);
+  const [bookingCompleted, setBookingCompleted] = useState(false);
 
   // 섹션 진입 애니메이션 + 도달 추적
   useEffect(() => {
@@ -92,7 +93,7 @@ export default function Home() {
       <div id="section-booking" ref={bookingRef}>
         <BookingForm
           onFormStart={() => track("form_started")}
-          onFormSubmit={() => track("form_submitted")}
+          onFormSubmit={() => { track("form_submitted"); setBookingCompleted(true); }}
           onDateSelect={(date) => track("date_selected", { date })}
           onTimeSelect={(date, time) => track("time_selected", { date, time })}
         />
@@ -112,7 +113,7 @@ export default function Home() {
       </footer>
 
       {/* 모바일 하단 고정 CTA */}
-      <StickyCtaBar onCtaClick={() => scrollToBooking("sticky_bar")} />
+      <StickyCtaBar onCtaClick={() => scrollToBooking("sticky_bar")} hidden={bookingCompleted} />
     </>
   );
 }

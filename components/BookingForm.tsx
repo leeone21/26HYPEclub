@@ -156,16 +156,60 @@ export default function BookingForm({
     return (
       <section id="booking" className="section-padding bg-bg-base">
         <div className="max-w-md mx-auto text-center">
+          {/* 체크 아이콘 */}
           <div
-            className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
-            style={{ background: "var(--color-brand-accent-muted)", border: "1px solid var(--color-brand-accent)" }}
+            className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6"
+            style={{ background: "var(--color-brand-accent)" }}
           >
-            <span className="text-2xl text-accent">✓</span>
+            <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+              <path d="M8 22L18 32L36 12" stroke="#0A0A0A" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </div>
-          <h2 className="font-heading font-black text-display-md text-text-primary mb-3">예약 완료!</h2>
-          <p className="text-text-secondary text-lg leading-relaxed">예약 완료. 확인 연락드리겠습니다.</p>
-          <p className="text-text-muted text-sm mt-3">체험 당일 등록하시면 별도 혜택도 안내해드려요.</p>
-          <p className="text-text-muted text-sm mt-3">{form.selectedDate} {form.selectedTime}</p>
+
+          <h2 className="font-heading font-black text-display-md text-text-primary mb-2">예약 신청이 완료되었습니다.</h2>
+          <p className="text-text-secondary text-base leading-relaxed mb-6">
+            담당자 확인 후 예약 확정 문자를 보내드려요.<br />
+            <span className="text-text-muted text-sm">문자를 받으셔야 예약이 최종 확정됩니다.</span>
+          </p>
+
+          {/* 예약 정보 카드 */}
+          <div
+            className="rounded-2xl px-6 py-5 mb-6 text-left"
+            style={{ background: "var(--color-bg-surface)", border: "1px solid var(--color-brand-accent)" }}
+          >
+            <p className="text-xs font-semibold tracking-widest uppercase mb-4" style={{ color: "var(--color-brand-accent)" }}>예약 정보</p>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-text-muted text-sm">이름</span>
+                <span className="text-text-primary font-semibold text-sm">{form.name}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-text-muted text-sm">날짜</span>
+                <span className="text-text-primary font-semibold text-sm">{form.selectedDate}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-text-muted text-sm">시간</span>
+                <span className="font-black text-base" style={{ color: "var(--color-brand-accent)" }}>{form.selectedTime}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 안내 문구 */}
+          <div className="rounded-xl px-5 py-4 text-left" style={{ background: "rgba(200,255,0,0.06)", border: "1px solid rgba(200,255,0,0.2)" }}>
+            <p className="text-sm leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
+              체험 당일 등록 시 <span style={{ color: "var(--color-brand-accent)" }} className="font-semibold">별도 혜택</span>을 안내해드려요.
+            </p>
+          </div>
+
+          {/* 연락처 */}
+          <a
+            href="tel:01081324550"
+            className="flex items-center justify-center gap-2 mt-5 py-3 rounded-xl transition-opacity active:opacity-70"
+            style={{ background: "var(--color-bg-surface)" }}
+          >
+            <span className="text-text-muted text-sm">문의</span>
+            <span className="font-bold text-xl" style={{ color: "var(--color-text-primary)" }}>010-8132-4550</span>
+          </a>
         </div>
       </section>
     );

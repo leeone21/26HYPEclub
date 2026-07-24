@@ -2,9 +2,8 @@
 
 import { useEffect, useRef } from "react";
 
-const LAT = 37.484149;
-const LNG = 126.929583;
-const LABEL = "하이프트레이닝클럽";
+const ADDRESS = "관악구 남부순환로 180길 6";
+const LABEL = "하이프 트레이닝클럽 in 그린짐";
 
 declare global {
   interface Window {
@@ -21,7 +20,7 @@ export default function KakaoMap() {
     if (!mapKey || !containerRef.current) return;
 
     const script = document.createElement("script");
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${mapKey}&autoload=false`;
+    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${mapKey}&libraries=services&autoload=false`;
     script.async = true;
 
     script.onload = () => {
@@ -29,43 +28,41 @@ export default function KakaoMap() {
         const container = containerRef.current;
         if (!container) return;
 
-        const map = new window.kakao.maps.Map(container, {
-          center: new window.kakao.maps.LatLng(LAT, LNG),
-          level: 3,
-          draggable: false,
-          scrollwheel: false,
-          disableDoubleClick: true,
-          disableDoubleClickZoom: true,
+        const geocoder = new window.kakao.maps.services.Geocoder();
+        geocoder.addressSearch(ADDRESS, (result: any[], status: string) => {
+          if (status !== window.kakao.maps.services.Status.OK || !result[0]) return;
+
+          const lat = parseFloat(result[0].y);
+          const lng = parseFloat(result[0].x);
+          const position = new window.kakao.maps.LatLng(lat, lng);
+
+          const map = new window.kakao.maps.Map(container, {
+            center: position,
+            level: 3,
+            draggable: false,
+            scrollwheel: false,
+            disableDoubleClick: true,
+            disableDoubleClickZoom: true,
+          });
+
+          const content = `
+            <div style="pointer-events:none; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.5));">
+              <svg width="48" height="64" viewBox="0 0 44 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22 0C9.85 0 0 9.85 0 22C0 38.5 22 60 22 60C22 60 44 38.5 44 22C44 9.85 34.15 0 22 0Z" fill="#0A0A0A"/>
+                <circle cx="22" cy="22" r="10" fill="#C8FF00"/>
+              </svg>
+            </div>
+          `;
+
+          new window.kakao.maps.CustomOverlay({
+            map,
+            position,
+            content,
+            yAnchor: 1.0,
+          });
+
+          window.kakao.maps.event.addListener(map, "click", () => {});
         });
-
-        // 커스텀 오버레이 (팀버핏 스타일 마커)
-        const content = `
-          <div style="
-            display:flex; align-items:center; gap:8px;
-            background:#0A0A0A; color:#F5F5F5;
-            padding:10px 16px; border-radius:999px;
-            font-family:'Pretendard Variable',sans-serif;
-            font-size:14px; font-weight:700;
-            box-shadow:0 4px 16px rgba(0,0,0,0.5);
-            pointer-events:none; white-space:nowrap;
-          ">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="12" r="10" fill="#C8FF00"/>
-              <path d="M12 6C9.24 6 7 8.24 7 11C7 14.75 12 19 12 19C12 19 17 14.75 17 11C17 8.24 14.76 6 12 6ZM12 12.5C11.17 12.5 10.5 11.83 10.5 11C10.5 10.17 11.17 9.5 12 9.5C12.83 9.5 13.5 10.17 13.5 11C13.5 11.83 12.83 12.5 12 12.5Z" fill="#0A0A0A"/>
-            </svg>
-            ${LABEL}
-          </div>
-        `;
-
-        new window.kakao.maps.CustomOverlay({
-          map,
-          position: new window.kakao.maps.LatLng(LAT, LNG),
-          content,
-          yAnchor: 1.4,
-        });
-
-        // 지도 클릭 시 아무것도 안 함 (외부 이동 차단)
-        window.kakao.maps.event.addListener(map, "click", () => {});
       });
     };
 
