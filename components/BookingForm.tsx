@@ -61,7 +61,7 @@ export default function BookingForm({
       }
       group.chips.push(chip);
     });
-    return groups;
+    return groups.filter((g) => g.chips.some((c) => !c.disabled));
   }, [dateChips]);
 
   const timeSlots = useMemo(

@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://26-hyp-eclub.vercel.app"),
   title: "하이프트레이닝클럽 | 신림 그룹PT 무료체험",
   description:
     "신림역 근처 하이브리드 그룹PT — 혼자 하는 운동이 지겨웠다면 함께 하세요. 첫 수업 무료체험 신청 가능.",
@@ -13,6 +14,7 @@ export const metadata: Metadata = {
       "신림 지역 20~30대와 함께하는 하이브리드 트레이닝. 첫 수업 무료체험 신청하기.",
     type: "website",
     locale: "ko_KR",
+    images: [{ url: "/images/og-thumbnail.png", width: 1080, height: 1080 }],
   },
   robots: { index: true, follow: true },
 };
