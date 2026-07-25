@@ -17,7 +17,7 @@ export async function sendBookingNotification(record: {
   const [, m, d] = record.selected_date.split("-");
   const dateStr = `${parseInt(m)}/${parseInt(d)} (${days[day]}) ${record.selected_time}`;
 
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     from: "하이프트레이닝클럽 <onboarding@resend.dev>",
     to,
     subject: `[새 예약] ${record.name} · ${dateStr}`,
@@ -33,4 +33,6 @@ export async function sendBookingNotification(record: {
       </div>
     `,
   });
+
+  if (error) throw new Error(JSON.stringify(error));
 }
