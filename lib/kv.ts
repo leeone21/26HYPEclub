@@ -25,12 +25,6 @@ const mem = {
       memLists.delete(k);
     });
   },
-  async lrem(key: string, count: number, element: string): Promise<void> {
-    const list = memLists.get(key);
-    if (!list) return;
-    const next = list.filter((v) => v !== element);
-    memLists.set(key, next);
-  },
   async sadd(key: string, ...members: string[]): Promise<void> {
     if (!memSets.has(key)) memSets.set(key, new Set());
     members.forEach((m) => memSets.get(key)!.add(m));

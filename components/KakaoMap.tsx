@@ -3,7 +3,6 @@
 import { useEffect, useRef } from "react";
 
 const ADDRESS = "관악구 남부순환로 180길 6";
-const LABEL = "하이프 트레이닝클럽 in 그린짐";
 
 declare global {
   interface Window {
@@ -29,6 +28,7 @@ export default function KakaoMap() {
         if (!container) return;
 
         const geocoder = new window.kakao.maps.services.Geocoder();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         geocoder.addressSearch(ADDRESS, (result: any[], status: string) => {
           if (status !== window.kakao.maps.services.Status.OK || !result[0]) return;
 
