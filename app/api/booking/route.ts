@@ -110,15 +110,11 @@ export async function POST(request: NextRequest) {
     await kv.sadd(slotKey, id);
     await kv.rpush(`bookings:by-date:${selectedDate}`, id);
 
-    // Google Sheets에 저장 (실패해도 예약은 완료 처리)
-    appendBookingToSheet(record).catch((err) =>
-      console.error("[SHEETS] 저장 오류:", err)
-    );
-
-    // 이메일 알림 발송 (실패해도 예약은 완료 처리)
-    sendBookingNotification(record).catch((err) =>
-      console.error("[NOTIFY] 알림 오류:", err)
-    );
+    // Google Sheets + 이메일 알림 (실패해도 예약은 완료 처리)
+    await Promise.allSettled([
+      appendBookingToSheet(record).catch((err) => console.error("[SHEETS] 저장 오류:", err)),
+      sendBookingNotification(record).catch((err) => console.error("[NOTIFY] 알림 오류:", err)),
+    ]);
 
     return NextResponse.json({ success: true, message: "예약이 완료되었습니다." });
   } catch (error) {
