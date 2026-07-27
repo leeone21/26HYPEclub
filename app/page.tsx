@@ -17,6 +17,11 @@ export default function Home() {
   const bookingRef = useRef<HTMLDivElement>(null);
   const [bookingCompleted, setBookingCompleted] = useState(false);
 
+  // 페이지 방문 카운트
+  useEffect(() => {
+    fetch("/api/track-visit", { method: "POST" }).catch(() => {});
+  }, []);
+
   // 섹션 진입 애니메이션 + 도달 추적
   useEffect(() => {
     const observers: IntersectionObserver[] = [];

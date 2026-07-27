@@ -212,24 +212,131 @@ function getPeriodRange(key: PeriodKey): { start: string; end: string } | null {
     const dd = String(d.getDate()).padStart(2, "0");
     return `${y}-${m}-${dd}`;
   };
-  const end = fmt(today);
   if (key === "week") {
     const start = new Date(today);
     start.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
-    return { start: fmt(start), end };
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return { start: fmt(start), end: fmt(end) };
   }
   if (key === "month") {
-    return { start: fmt(new Date(today.getFullYear(), today.getMonth(), 1)), end };
+    const start = new Date(today.getFullYear(), today.getMonth(), 1);
+    const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    return { start: fmt(start), end: fmt(end) };
   }
   if (key === "quarter") {
     const start = new Date(today);
     start.setMonth(today.getMonth() - 2, 1);
-    return { start: fmt(start), end };
+    const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    return { start: fmt(start), end: fmt(end) };
   }
   if (key === "year") {
-    return { start: `${today.getFullYear()}-01-01`, end };
+    return { start: `${today.getFullYear()}-01-01`, end: `${today.getFullYear()}-12-31` };
   }
   return null;
+}
+
+// ─── 방문자 탭 ────────────────────────────────────────────────────
+type VisitorData = { today: number; yesterday: number; total: number; week: number; month: number; trend: { date: string; count: number }[] } | null;
+
+function VisitorsTab({ visitors, todayBookings }: { visitors: VisitorData; todayBookings: number }) {
+  if (!visitors) return <p className="text-sm py-8 text-center" style={{ color: "var(--color-text-muted)" }}>불러오는 중...</p>;
+
+  const { today, yesterday, total, week, month, trend } = visitors;
+  const maxTrend = Math.max(...trend.map((t) => t.count), 1);
+  const convRate = today > 0 && todayBookings > 0 ? Math.round((todayBookings / today) * 100) : null;
+  const dayLabels = ["일", "월", "화", "수", "목", "금", "토"];
+
+  const card = (label: string, value: string | number, sub?: string, accent?: boolean) => (
+    <div className="p-5 rounded-2xl" style={{ background: "var(--color-bg-surface)", border: `1px solid ${accent ? "rgba(200,255,0,0.3)" : "var(--color-border)"}` }}>
+      <p className="text-xs mb-2" style={{ color: "var(--color-text-muted)" }}>{label}</p>
+      <p className="font-heading font-black text-3xl" style={{ color: accent ? "var(--color-brand-accent)" : "var(--color-text-primary)" }}>
+        {value}
+        {typeof value === "number" && <span className="text-base font-normal ml-1" style={{ color: "var(--color-text-muted)" }}>명</span>}
+      </p>
+      {sub && <p className="text-xs mt-1" style={{ color: "var(--color-text-muted)" }}>{sub}</p>}
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {card("오늘 방문자", today, yesterday > 0 ? `어제 ${yesterday}명` : "어제 0명", true)}
+        {card("이번 주", week, "월~오늘 합계")}
+        {card("이번 달", month, new Date().getMonth() + 1 + "월 누적")}
+        {card("누적 방문자", total, "서비스 시작 이후")}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {/* 최근 7일 트렌드 */}
+        <div className="p-5 rounded-2xl space-y-4" style={{ background: "var(--color-bg-surface)", border: "1px solid var(--color-border)" }}>
+          <h3 className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>최근 7일 방문 추이</h3>
+          <div className="flex items-end gap-1.5" style={{ height: 80 }}>
+            {trend.map((t, i) => {
+              const isToday = i === trend.length - 1;
+              const h = Math.max(Math.round((t.count / maxTrend) * 72), t.count > 0 ? 4 : 0);
+              const dow = new Date(t.date + "T00:00:00").getDay();
+              return (
+                <div key={t.date} className="flex flex-col items-center gap-1" style={{ flex: 1 }}>
+                  {t.count > 0 && (
+                    <span className="text-xs" style={{ color: isToday ? "var(--color-brand-accent)" : "var(--color-text-muted)", fontVariantNumeric: "tabular-nums" }}>
+                      {t.count}
+                    </span>
+                  )}
+                  <div style={{ flex: 1, width: "100%", display: "flex", alignItems: "flex-end" }}>
+                    <div
+                      style={{
+                        width: "100%",
+                        height: h,
+                        background: isToday ? "var(--color-brand-accent)" : "rgba(200,255,0,0.3)",
+                        borderRadius: "3px 3px 0 0",
+                        minHeight: t.count > 0 ? 4 : 0,
+                      }}
+                    />
+                  </div>
+                  <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>{dayLabels[dow]}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 전환 지표 */}
+        <div className="p-5 rounded-2xl space-y-4" style={{ background: "var(--color-bg-surface)", border: "1px solid var(--color-border)" }}>
+          <h3 className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>방문 → 예약 전환</h3>
+          <div className="space-y-5">
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>오늘 방문자</span>
+                <span className="text-sm font-semibold" style={{ color: "var(--color-text-primary)", fontVariantNumeric: "tabular-nums" }}>{today}명</span>
+              </div>
+              <div className="h-2 rounded-full" style={{ background: "var(--color-bg-base)" }}>
+                <div className="h-2 rounded-full" style={{ width: "100%", background: "#333" }} />
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>오늘 예약</span>
+                <span className="text-sm font-semibold" style={{ color: "var(--color-brand-accent)", fontVariantNumeric: "tabular-nums" }}>{todayBookings}명</span>
+              </div>
+              <div className="h-2 rounded-full" style={{ background: "var(--color-bg-base)" }}>
+                <div
+                  className="h-2 rounded-full"
+                  style={{ width: today > 0 ? `${Math.min(Math.round((todayBookings / today) * 100), 100)}%` : "0%", background: "var(--color-brand-accent)" }}
+                />
+              </div>
+            </div>
+            <div className="pt-2" style={{ borderTop: "1px solid var(--color-border)" }}>
+              <p className="text-xs mb-1" style={{ color: "var(--color-text-muted)" }}>오늘 전환율</p>
+              <p className="font-heading font-black text-3xl" style={{ color: convRate !== null ? "var(--color-brand-accent)" : "var(--color-text-muted)" }}>
+                {convRate !== null ? `${convRate}%` : "—"}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ─── 통계 탭 ──────────────────────────────────────────────────────
@@ -473,6 +580,8 @@ export default function AdminPage() {
   const [todayCount, setTodayCount] = useState(0);
   const [weekCount, setWeekCount] = useState(0);
   const [monthConvRate, setMonthConvRate] = useState<number | null>(null);
+  const [visitors, setVisitors] = useState<{ today: number; yesterday: number; total: number; week: number; month: number; trend: { date: string; count: number }[] } | null>(null);
+  const [statsSubTab, setStatsSubTab] = useState<"visitors" | "bookings">("visitors");
 
   // ── 수동 예약 추가 모달 ───────────────────────────────────────
   const [showAddModal, setShowAddModal] = useState(false);
@@ -490,11 +599,14 @@ export default function AdminPage() {
       const d = new Date();
       const mon = new Date(d);
       mon.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1));
-      return { start: toLocalDateStr(mon), end: today };
+      const sun = new Date(mon);
+      sun.setDate(mon.getDate() + 6);
+      return { start: toLocalDateStr(mon), end: toLocalDateStr(sun) };
     }
     if (bookingPeriod === "month") {
       const d = new Date();
-      return { start: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`, end: today };
+      const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+      return { start: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`, end: toLocalDateStr(lastDay) };
     }
     if (bookingPeriod === "range" && bookingRangeStart && bookingRangeEnd) {
       return { start: bookingRangeStart, end: bookingRangeEnd };
@@ -511,9 +623,13 @@ export default function AdminPage() {
   }, []);
 
   const loadAllBookings = useCallback(async () => {
-    const res = await fetch("/api/admin/bookings");
-    const data = await res.json();
-    if (data.success) setAllBookings(data.bookings);
+    const [bookRes, visRes] = await Promise.all([
+      fetch("/api/admin/bookings"),
+      fetch("/api/admin/visitors"),
+    ]);
+    const [bookData, visData] = await Promise.all([bookRes.json(), visRes.json()]);
+    if (bookData.success) setAllBookings(bookData.bookings);
+    if (visData.success) setVisitors(visData);
   }, []);
 
   const loadSettings = useCallback(async () => {
@@ -538,11 +654,12 @@ export default function AdminPage() {
     const today = toLocalDateStr(new Date());
     const d = new Date();
     const monthStart = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
-    const [todayRes, allRes] = await Promise.all([
+    const [todayRes, allRes, visitorsRes] = await Promise.all([
       fetch(`/api/admin/bookings?date=${today}`),
       fetch("/api/admin/bookings"),
+      fetch("/api/admin/visitors"),
     ]);
-    const [todayData, allData] = await Promise.all([todayRes.json(), allRes.json()]);
+    const [todayData, allData, visitorsData] = await Promise.all([todayRes.json(), allRes.json(), visitorsRes.json()]);
     if (todayData.success) setTodayCount(todayData.bookings.filter((b: Booking) => b.status !== "cancelled").length);
     if (allData.success) {
       const weekDates = new Set(getWeekDates());
@@ -553,6 +670,7 @@ export default function AdminPage() {
       const monthRegistered = monthConfirmed.filter((b) => b.outcome === "registered").length;
       setMonthConvRate(monthConfirmed.length > 0 ? Math.round((monthRegistered / monthConfirmed.length) * 100) : null);
     }
+    if (visitorsData.success) setVisitors(visitorsData);
   }, []);
 
   useEffect(() => {
@@ -736,6 +854,33 @@ export default function AdminPage() {
         {/* ─── 현황 ─────────────────────────────────────────────── */}
         {tab === "overview" && (
           <div className="space-y-6">
+            {/* 방문자 수 */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="p-5 rounded-2xl" style={{ background: "var(--color-bg-surface)", border: "1px solid rgba(200,255,0,0.2)" }}>
+                <p className="text-text-muted text-xs mb-2">오늘 방문자</p>
+                <p className="font-heading font-black text-3xl" style={{ color: "var(--color-brand-accent)" }}>
+                  {visitors?.today ?? "—"}<span className="text-base font-normal text-text-muted ml-1">명</span>
+                </p>
+                {visitors && <p className="text-text-muted text-xs mt-1">어제 {visitors.yesterday}명</p>}
+              </div>
+              <div className="p-5 rounded-2xl" style={{ background: "var(--color-bg-surface)", border: "1px solid var(--color-border)" }}>
+                <p className="text-text-muted text-xs mb-2">누적 방문자</p>
+                <p className="font-heading font-black text-3xl text-text-primary">
+                  {visitors?.total ?? "—"}<span className="text-base font-normal text-text-muted ml-1">명</span>
+                </p>
+              </div>
+              <div className="p-5 rounded-2xl" style={{ background: "var(--color-bg-surface)", border: "1px solid var(--color-border)" }}>
+                <p className="text-text-muted text-xs mb-2">방문→예약 전환</p>
+                <p className="font-heading font-black text-3xl text-text-primary">
+                  {visitors && visitors.total > 0 && todayCount > 0
+                    ? `${Math.round((todayCount / visitors.today) * 100)}%`
+                    : "—"}
+                </p>
+                <p className="text-text-muted text-xs mt-1">오늘 기준</p>
+              </div>
+            </div>
+
+            {/* 예약 현황 */}
             <div className="grid grid-cols-3 gap-4">
               <div className="p-5 rounded-2xl" style={{ background: "var(--color-bg-surface)", border: "1px solid var(--color-border)" }}>
                 <p className="text-text-muted text-xs mb-2">오늘 예약</p>
@@ -914,7 +1059,32 @@ export default function AdminPage() {
         )}
 
         {/* ─── 통계 ─────────────────────────────────────────────── */}
-        {tab === "stats" && <StatsTab bookings={allBookings} />}
+        {tab === "stats" && (
+          <div className="space-y-6">
+            {/* 서브탭 */}
+            <div className="flex gap-1 p-1 rounded-xl" style={{ background: "var(--color-bg-surface)" }}>
+              {(["visitors", "bookings"] as const).map((st) => {
+                const labels = { visitors: "방문자", bookings: "예약 현황" };
+                return (
+                  <button
+                    key={st}
+                    onClick={() => setStatsSubTab(st)}
+                    className="flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                    style={{
+                      background: statsSubTab === st ? "var(--color-brand-accent)" : "transparent",
+                      color: statsSubTab === st ? "#0A0A0A" : "var(--color-text-secondary)",
+                    }}
+                  >
+                    {labels[st]}
+                  </button>
+                );
+              })}
+            </div>
+
+            {statsSubTab === "visitors" && <VisitorsTab visitors={visitors} todayBookings={todayCount} />}
+            {statsSubTab === "bookings" && <StatsTab bookings={allBookings} />}
+          </div>
+        )}
 
         {/* ─── 슬롯 관리 ───────────────────────────────────────── */}
         {tab === "slots" && (

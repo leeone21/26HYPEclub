@@ -73,6 +73,12 @@ const mem = {
     ];
     return Array.from(new Set(allKeys)).filter((k) => regex.test(k));
   },
+  async incr(key: string): Promise<number> {
+    const cur = parseInt(memStore.get(key) ?? "0", 10);
+    const next = cur + 1;
+    memStore.set(key, String(next));
+    return next;
+  },
 };
 
 // ─── Vercel KV 래퍼 ──────────────────────────────────────────────
@@ -131,6 +137,9 @@ async function getKV() {
       },
       async keys(pattern: string) {
         return kv.keys(pattern);
+      },
+      async incr(key: string) {
+        return kv.incr(key);
       },
     };
   } else {
