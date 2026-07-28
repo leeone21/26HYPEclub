@@ -1,83 +1,47 @@
 import { NextResponse } from "next/server";
 import { getKV } from "@/lib/kv";
-
-function dateKey(date: Date) {
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-  return `visits:daily:${yyyy}-${mm}-${dd}`;
-}
-
-function toDateStr(date: Date) {
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-}
+import { kstTodayStr, addDaysStr, dayOfWeekStr } from "@/lib/date";
 
 export async function GET() {
   const kv = await getKV();
-  const today = new Date();
+  const today = kstTodayStr();
+  const yesterday = addDaysStr(today, -1);
 
   // 최근 7일 날짜 목록 (오래된 순)
-  const last7: Date[] = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(today);
-    d.setDate(today.getDate() - (6 - i));
-    return d;
-  });
-
-  // 이번 달 시작
-  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const last7 = Array.from({ length: 7 }, (_, i) => addDaysStr(today, -(6 - i)));
 
   // 이번 주 월요일
-  const weekStart = new Date(today);
-  const day = weekStart.getDay();
-  weekStart.setDate(weekStart.getDate() - (day === 0 ? 6 : day - 1));
+  const dow = dayOfWeekStr(today); // 0=일 ... 6=토
+  const weekStart = addDaysStr(today, dow === 0 ? -6 : -(dow - 1));
 
-  const keys = [
-    "visits:total",
-    dateKey(today),
-    dateKey(new Date(today.getTime() - 86400000)),
-    ...last7.map(dateKey),
-  ];
+  // 이번 달 1일
+  const monthStart = `${today.slice(0, 7)}-01`;
 
+  const weekDays: string[] = [];
+  for (let d = weekStart; d <= today; d = addDaysStr(d, 1)) weekDays.push(d);
+
+  const monthDays: string[] = [];
+  for (let d = monthStart; d <= today; d = addDaysStr(d, 1)) monthDays.push(d);
+
+  // 필요한 날짜 전체를 중복 없이 한 번에 조회
+  const dateList = Array.from(new Set([today, yesterday, ...last7, ...monthDays]));
+  const keys = ["visits:total", ...dateList.map((d) => `visits:daily:${d}`)];
   const results = await Promise.all(keys.map((k) => kv.get(k)));
 
-  const [totalRaw, todayRaw, yesterdayRaw, ...last7Raw] = results;
-
-  // 이번 주 합계
-  const weekDays: string[] = [];
-  for (let d = new Date(weekStart); d <= today; d.setDate(d.getDate() + 1)) {
-    weekDays.push(toDateStr(new Date(d)));
-  }
-
-  // 이번 달 합계 — 7일 이내 날짜는 이미 가져왔으니 추가 조회
-  const monthDays: string[] = [];
-  for (let d = new Date(monthStart); d <= today; d.setDate(d.getDate() + 1)) {
-    monthDays.push(toDateStr(new Date(d)));
-  }
-  const extra = monthDays.filter((ds) => !last7.some((d) => toDateStr(d) === ds));
-  const extraVals = extra.length > 0
-    ? await Promise.all(extra.map((ds) => kv.get(`visits:daily:${ds}`)))
-    : [];
-
+  const totalRaw = results[0];
   const dailyMap: Record<string, number> = {};
-  last7.forEach((d, i) => { dailyMap[toDateStr(d)] = parseInt(last7Raw[i] ?? "0", 10); });
-  extra.forEach((ds, i) => { dailyMap[ds] = parseInt(extraVals[i] ?? "0", 10); });
+  dateList.forEach((d, i) => { dailyMap[d] = parseInt(results[i + 1] ?? "0", 10); });
 
-  const weekCount = weekDays.reduce((s, ds) => s + (dailyMap[ds] ?? 0), 0);
-  const monthCount = monthDays.reduce((s, ds) => s + (dailyMap[ds] ?? 0), 0);
+  const weekCount = weekDays.reduce((s, d) => s + (dailyMap[d] ?? 0), 0);
+  const monthCount = monthDays.reduce((s, d) => s + (dailyMap[d] ?? 0), 0);
 
-  const trend = last7.map((d) => ({
-    date: toDateStr(d),
-    count: dailyMap[toDateStr(d)] ?? 0,
-  }));
+  const trend = last7.map((d) => ({ date: d, count: dailyMap[d] ?? 0 }));
 
   return NextResponse.json({
     success: true,
     total: parseInt(totalRaw ?? "0", 10),
-    today: parseInt(todayRaw ?? "0", 10),
-    yesterday: parseInt(yesterdayRaw ?? "0", 10),
+    today: dailyMap[today] ?? 0,
+    yesterday: dailyMap[yesterday] ?? 0,
     week: weekCount,
     month: monthCount,
     trend,
