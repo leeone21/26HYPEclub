@@ -65,6 +65,14 @@ export function getAvailableDates(): DateChip[] {
   return chips;
 }
 
+const BOOKING_CUTOFF_MS = 60 * 60 * 1000; // 수업 시작 1시간 전까지만 예약 가능
+
+/** 해당 날짜/시간 슬롯이 아직 예약 가능한 시점인지 확인 (수업 시작 1시간 전 마감) */
+export function isSlotBookable(dateStr: string, timeValue: string): boolean {
+  const slotMs = new Date(`${dateStr}T${timeValue}:00+09:00`).getTime();
+  return slotMs - Date.now() >= BOOKING_CUTOFF_MS;
+}
+
 /** 선택한 날짜의 요일에 맞는 시간 슬롯을 반환 */
 export function getTimeSlotsForDate(dateStr: string): TimeSlot[] {
   const d = new Date(dateStr + "T00:00:00");

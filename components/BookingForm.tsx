@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useMemo, useEffect } from "react";
-import { getAvailableDates, getTimeSlotsForDate } from "@/lib/schedule";
+import { getAvailableDates, getTimeSlotsForDate, isSlotBookable } from "@/lib/schedule";
 
 interface SlotStatus {
   time: string;
@@ -337,7 +337,9 @@ export default function BookingForm({
               ) : (
                 timeSlots.map((slot) => {
                   const isSelected = form.selectedTime === slot.value;
-                  const isClosed = slotStatuses.find((s) => s.time === slot.value)?.isClosed ?? false;
+                  const isManuallyClosed = slotStatuses.find((s) => s.time === slot.value)?.isClosed ?? false;
+                  const isPastCutoff = !isSlotBookable(form.selectedDate, slot.value);
+                  const isClosed = isManuallyClosed || isPastCutoff;
                   return (
                     <button
                       key={slot.value} type="button" disabled={isClosed}
@@ -347,12 +349,13 @@ export default function BookingForm({
                         background: isClosed ? "var(--color-bg-surface)" : isSelected ? "var(--color-brand-accent)" : "var(--color-bg-surface)",
                         borderColor: isClosed ? "var(--color-border)" : isSelected ? "var(--color-brand-accent)" : "var(--color-border)",
                         color: isClosed ? "var(--color-text-muted)" : isSelected ? "#0A0A0A" : "var(--color-text-primary)",
-                        opacity: isClosed ? 0.5 : 1,
+                        opacity: isClosed ? 0.35 : 1,
                         cursor: isClosed ? "not-allowed" : "pointer",
                       }}
                     >
                       {slot.label}
-                      {isClosed && <span className="block text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>마감</span>}
+                      {isManuallyClosed && <span className="block text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>마감</span>}
+                      {isPastCutoff && !isManuallyClosed && <span className="block text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>예약마감</span>}
                     </button>
                   );
                 })

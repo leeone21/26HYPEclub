@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getKV } from "@/lib/kv";
 import { appendBookingToSheet } from "@/lib/sheets";
 import { sendBookingNotification } from "@/lib/notify";
+import { isSlotBookable } from "@/lib/schedule";
 
 interface BookingRecord {
   id: string;
@@ -40,6 +41,12 @@ export async function POST(request: NextRequest) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) {
       return NextResponse.json(
         { success: false, error: "올바른 날짜 형식이 아닙니다." },
+        { status: 400 }
+      );
+    }
+    if (!/^\d{2}:\d{2}$/.test(selectedTime) || !isSlotBookable(selectedDate, selectedTime)) {
+      return NextResponse.json(
+        { success: false, error: "선택하신 시간은 예약 마감되었습니다. (수업 시작 1시간 전까지 예약 가능)" },
         { status: 400 }
       );
     }
