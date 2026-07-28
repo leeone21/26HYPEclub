@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useCallback, useState } from "react";
 import { track } from "@vercel/analytics";
+import { gtagEvent } from "@/lib/gtag";
 import Hero from "@/components/Hero";
 import Problem from "@/components/Problem";
 import Program from "@/components/Program";
@@ -57,6 +58,7 @@ export default function Home() {
 
   const scrollToBooking = useCallback((location: string) => {
     track("cta_clicked", { location });
+    gtagEvent("cta_click", { cta_location: location });
     bookingRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
@@ -97,8 +99,8 @@ export default function Home() {
       {/* BookingForm */}
       <div id="section-booking" ref={bookingRef}>
         <BookingForm
-          onFormStart={() => track("form_started")}
-          onFormSubmit={() => { track("form_submitted"); setBookingCompleted(true); }}
+          onFormStart={() => { track("form_started"); gtagEvent("form_start"); }}
+          onFormSubmit={() => { track("form_submitted"); gtagEvent("form_submitted"); setBookingCompleted(true); }}
           onDateSelect={(date) => track("date_selected", { date })}
           onTimeSelect={(date, time) => track("time_selected", { date, time })}
         />
