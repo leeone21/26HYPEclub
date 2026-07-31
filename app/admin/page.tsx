@@ -40,6 +40,17 @@ function maskContact(contact: string) {
   return contact;
 }
 
+function formatRelativeTime(iso: string) {
+  const t = new Date(iso).getTime();
+  if (isNaN(t)) return "";
+  const diffMin = Math.floor((Date.now() - t) / 60000);
+  if (diffMin < 1) return "방금 전";
+  if (diffMin < 60) return `${diffMin}분 전`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour}시간 전`;
+  return `${Math.floor(diffHour / 24)}일 전`;
+}
+
 function getWeekDates(): string[] {
   const dates: string[] = [];
   const today = new Date();
@@ -576,6 +587,7 @@ export default function AdminPage() {
 
   const [slotDate, setSlotDate] = useState(toLocalDateStr(new Date()));
   const [slotData, setSlotData] = useState<{ time: string; count: number; max: number; isClosed: boolean; isManualClose: boolean }[]>([]);
+  const [slotBookings, setSlotBookings] = useState<Booking[]>([]);
 
   const [todayCount, setTodayCount] = useState(0);
   const [weekCount, setWeekCount] = useState(0);
@@ -645,9 +657,13 @@ export default function AdminPage() {
   }, []);
 
   const loadSlots = useCallback(async () => {
-    const res = await fetch(`/api/admin/slots/override?date=${slotDate}`);
-    const data = await res.json();
-    if (data.success) setSlotData(data.slots);
+    const [overrideRes, bookingsRes] = await Promise.all([
+      fetch(`/api/admin/slots/override?date=${slotDate}`),
+      fetch(`/api/admin/bookings?date=${slotDate}`),
+    ]);
+    const [overrideData, bookingsData] = await Promise.all([overrideRes.json(), bookingsRes.json()]);
+    if (overrideData.success) setSlotData(overrideData.slots);
+    if (bookingsData.success) setSlotBookings(bookingsData.bookings);
   }, [slotDate]);
 
   const loadOverview = useCallback(async () => {
@@ -798,6 +814,14 @@ export default function AdminPage() {
     URL.revokeObjectURL(url);
   };
 
+  // 최근 7일 이내 접수된 신규 예약 (접수 시각 기준, 최신순)
+  const recentBookings = allBookings
+    .filter((b) => {
+      const t = new Date(b.created_at).getTime();
+      return !isNaN(t) && Date.now() - t < 7 * 86400000;
+    })
+    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+
   const filteredBookings = bookings.filter((b) => {
     const range = getBookingDateRange();
     if (range) {
@@ -854,6 +878,59 @@ export default function AdminPage() {
         {/* ─── 현황 ─────────────────────────────────────────────── */}
         {tab === "overview" && (
           <div className="space-y-6">
+            {/* 최근 7일 신규 예약 */}
+            <div
+              className="p-5 rounded-2xl"
+              style={{
+                background: "var(--color-bg-surface)",
+                border: `1px solid ${recentBookings.length > 0 ? "rgba(200,255,0,0.35)" : "var(--color-border)"}`,
+              }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-text-primary font-semibold">최근 7일 신규 예약</h2>
+                <span
+                  className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                  style={{
+                    background: recentBookings.length > 0 ? "rgba(200,255,0,0.12)" : "var(--color-bg-base)",
+                    color: recentBookings.length > 0 ? "var(--color-brand-accent)" : "var(--color-text-muted)",
+                  }}
+                >
+                  {recentBookings.length}건
+                </span>
+              </div>
+              {recentBookings.length === 0 ? (
+                <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>최근 7일간 새로 들어온 예약이 없습니다.</p>
+              ) : (
+                <div className="space-y-2">
+                  {recentBookings.map((b) => {
+                    const createdT = new Date(b.created_at).getTime();
+                    const isNew = !isNaN(createdT) && Date.now() - createdT < 86400000;
+                    return (
+                      <div
+                        key={b.id}
+                        onClick={() => setTab("bookings")}
+                        className="flex items-center gap-3 flex-wrap px-3.5 py-2.5 rounded-xl cursor-pointer transition-colors"
+                        style={{ background: "var(--color-bg-base)", border: "1px solid var(--color-border)" }}
+                      >
+                        {isNew && (
+                          <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ background: "var(--color-brand-accent)", color: "#0A0A0A" }}>N</span>
+                        )}
+                        <span className="font-medium text-sm" style={{ color: "var(--color-text-primary)" }}>{b.name}</span>
+                        <span className="font-mono text-xs" style={{ color: "var(--color-text-muted)" }}>{maskContact(b.contact)}</span>
+                        <span className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+                          체험 {formatDate(b.selected_date)} {b.selected_time}
+                        </span>
+                        {b.status === "cancelled" && (
+                          <span className="text-xs px-2 py-0.5 rounded" style={{ background: "rgba(255,100,100,0.12)", color: "#ff6464" }}>예약취소</span>
+                        )}
+                        <span className="text-xs ml-auto" style={{ color: "var(--color-text-muted)" }}>{formatRelativeTime(b.created_at)} 접수</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             {/* 방문자 수 */}
             <div className="grid grid-cols-3 gap-4">
               <div className="p-5 rounded-2xl" style={{ background: "var(--color-bg-surface)", border: "1px solid rgba(200,255,0,0.2)" }}>
@@ -1108,24 +1185,39 @@ export default function AdminPage() {
             <div className="grid gap-3">
               {slotData.length === 0 ? (
                 <p className="text-text-muted text-sm py-8 text-center">슬롯 정보가 없습니다.</p>
-              ) : slotData.map((slot) => (
-                <div key={slot.time} className="flex items-center justify-between p-4 rounded-2xl"
-                  style={{ background: "var(--color-bg-surface)", border: `1px solid ${slot.isClosed ? "#ff6464" : "var(--color-border)"}` }}>
-                  <div className="flex items-center gap-4">
-                    <span className="text-text-primary font-semibold w-14">{slot.time}</span>
-                    <div className="h-2 rounded-full overflow-hidden" style={{ width: 120, background: "var(--color-bg-base)" }}>
-                      <div className="h-2 rounded-full transition-all" style={{ width: `${Math.min((slot.count / slot.max) * 100, 100)}%`, background: slot.isClosed ? "#ff6464" : "var(--color-brand-accent)" }} />
+              ) : slotData.map((slot) => {
+                const names = slotBookings.filter((b) => b.selected_time === slot.time && b.status !== "cancelled");
+                return (
+                  <div key={slot.time} className="p-4 rounded-2xl space-y-3"
+                    style={{ background: "var(--color-bg-surface)", border: `1px solid ${slot.isClosed ? "#ff6464" : "var(--color-border)"}` }}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <span className="text-text-primary font-semibold w-14">{slot.time}</span>
+                        <div className="h-2 rounded-full overflow-hidden" style={{ width: 120, background: "var(--color-bg-base)" }}>
+                          <div className="h-2 rounded-full transition-all" style={{ width: `${Math.min((slot.count / slot.max) * 100, 100)}%`, background: slot.isClosed ? "#ff6464" : "var(--color-brand-accent)" }} />
+                        </div>
+                        <span className="text-text-muted text-sm">{slot.count} / {slot.max}명</span>
+                        {slot.isClosed && <span className="text-xs text-red-400">{slot.isManualClose ? "수동 마감" : "정원 마감"}</span>}
+                      </div>
+                      <button onClick={() => handleSlotOverride(slot.time, slot.isManualClose ? "open" : "close")}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all"
+                        style={{ background: "transparent", borderColor: slot.isManualClose ? "var(--color-brand-accent)" : "#ff6464", color: slot.isManualClose ? "var(--color-brand-accent)" : "#ff6464" }}>
+                        {slot.isManualClose ? "재오픈" : "수동 마감"}
+                      </button>
                     </div>
-                    <span className="text-text-muted text-sm">{slot.count} / {slot.max}명</span>
-                    {slot.isClosed && <span className="text-xs text-red-400">{slot.isManualClose ? "수동 마감" : "정원 마감"}</span>}
+                    {names.length > 0 && (
+                      <div className="flex flex-wrap gap-2 pl-[72px]">
+                        {names.map((b) => (
+                          <span key={b.id} className="text-xs px-2.5 py-1 rounded-lg"
+                            style={{ background: "var(--color-bg-base)", color: "var(--color-text-secondary)" }}>
+                            {b.name} <span style={{ color: "var(--color-text-muted)" }}>· {maskContact(b.contact)}</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <button onClick={() => handleSlotOverride(slot.time, slot.isManualClose ? "open" : "close")}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all"
-                    style={{ background: "transparent", borderColor: slot.isManualClose ? "var(--color-brand-accent)" : "#ff6464", color: slot.isManualClose ? "var(--color-brand-accent)" : "#ff6464" }}>
-                    {slot.isManualClose ? "재오픈" : "수동 마감"}
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

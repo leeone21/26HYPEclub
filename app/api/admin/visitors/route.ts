@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getKV } from "@/lib/kv";
 import { kstTodayStr, addDaysStr, dayOfWeekStr } from "@/lib/date";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const kv = await getKV();
   const today = kstTodayStr();
