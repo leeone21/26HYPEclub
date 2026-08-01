@@ -40,6 +40,82 @@ function maskContact(contact: string) {
   return contact;
 }
 
+const BUSINESS_ADDRESS = "관악구 남부순환로 180길 6 최강타워 2층 (신림역 1번 출구, 도보 1분)";
+
+function buildConfirmMessage(b: { name: string; selected_date: string; selected_time: string }) {
+  return `안녕하세요! ${b.name}님, 신림 그린짐 PT 입니다.
+그룹 PT 무료체험 예약이 확정됐어요 🙌
+
+📅 일시: ${formatDate(b.selected_date)} ${b.selected_time}
+📍 장소: ${BUSINESS_ADDRESS}
+👟 준비물: 실내에서 신으실 운동화, 운동복
+
+문의사항 있으시면 편하게 연락주세요.`;
+}
+
+function formatKoreanDateTime(dateStr: string, timeStr: string) {
+  const days = ["일", "월", "화", "수", "목", "금", "토"];
+  const [, mm, dd] = dateStr.split("-");
+  const dow = new Date(dateStr + "T00:00:00").getDay();
+  const [hh, min] = timeStr.split(":");
+  return `${mm}월 ${dd}일 ${days[dow]}요일 ${hh}시 ${min}분`;
+}
+
+function buildReminderMessage(b: { selected_date: string; selected_time: string }) {
+  return `회원님 안녕하세요!
+신림 그린짐 PT 입니다~^^
+${formatKoreanDateTime(b.selected_date, b.selected_time)} 무료체험 수업이 있으십니다.
+
+실내에서 신으실 운동화, 운동복만 지참 부탁드리며, 시작 5~10분정도 전에 오시면 간단히 센터 소개 및 몸풀기 운동 도와 드리겠습니다 :)
+
+운동 후 피드백 사항 있으시다면 상담 진행시 전달 주시면 감사드리겠습니다^^
+
+혹시 참석 전 변경사항 혹은 문의사항 있으시면 연락부탁드립니다.
+그럼 곧 뵙겠습니다! 감사합니다!🤗🤗`;
+}
+
+async function copyToClipboard(text: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return;
+  } catch {
+    // 클립보드 API 미지원/권한 없는 환경 대비 fallback
+  }
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  document.body.removeChild(textarea);
+}
+
+function CopyButton({ label, getText }: { label: string; getText: () => string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleClick = async (e: { stopPropagation: () => void }) => {
+    e.stopPropagation();
+    await copyToClipboard(getText());
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className="text-xs px-2 py-1 rounded-md border font-medium transition-colors shrink-0"
+      style={{
+        borderColor: copied ? "var(--color-brand-accent)" : "var(--color-border)",
+        color: copied ? "var(--color-brand-accent)" : "var(--color-text-muted)",
+        background: "transparent",
+      }}
+    >
+      {copied ? "복사됨 ✓" : label}
+    </button>
+  );
+}
+
 function formatRelativeTime(iso: string) {
   const t = new Date(iso).getTime();
   if (isNaN(t)) return "";
@@ -909,21 +985,28 @@ export default function AdminPage() {
                       <div
                         key={b.id}
                         onClick={() => setTab("bookings")}
-                        className="flex items-center gap-3 flex-wrap px-3.5 py-2.5 rounded-xl cursor-pointer transition-colors"
+                        className="flex flex-col gap-2 px-3.5 py-2.5 rounded-xl cursor-pointer transition-colors"
                         style={{ background: "var(--color-bg-base)", border: "1px solid var(--color-border)" }}
                       >
-                        {isNew && (
-                          <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ background: "var(--color-brand-accent)", color: "#0A0A0A" }}>N</span>
-                        )}
-                        <span className="font-medium text-sm" style={{ color: "var(--color-text-primary)" }}>{b.name}</span>
-                        <span className="font-mono text-xs" style={{ color: "var(--color-text-muted)" }}>{maskContact(b.contact)}</span>
-                        <span className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-                          체험 {formatDate(b.selected_date)} {b.selected_time}
-                        </span>
-                        {b.status === "cancelled" && (
-                          <span className="text-xs px-2 py-0.5 rounded" style={{ background: "rgba(255,100,100,0.12)", color: "#ff6464" }}>예약취소</span>
-                        )}
-                        <span className="text-xs ml-auto" style={{ color: "var(--color-text-muted)" }}>{formatRelativeTime(b.created_at)} 접수</span>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          {isNew && (
+                            <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ background: "var(--color-brand-accent)", color: "#0A0A0A" }}>N</span>
+                          )}
+                          <span className="font-medium text-sm" style={{ color: "var(--color-text-primary)" }}>{b.name}</span>
+                          <span className="font-mono text-xs" style={{ color: "var(--color-text-muted)" }}>{maskContact(b.contact)}</span>
+                          <span className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+                            체험 {formatDate(b.selected_date)} {b.selected_time}
+                          </span>
+                          {b.status === "cancelled" && (
+                            <span className="text-xs px-2 py-0.5 rounded" style={{ background: "rgba(255,100,100,0.12)", color: "#ff6464" }}>예약취소</span>
+                          )}
+                          <span className="text-xs ml-auto" style={{ color: "var(--color-text-muted)" }}>{formatRelativeTime(b.created_at)} 접수</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <CopyButton label="전화번호 복사" getText={() => b.contact} />
+                          <CopyButton label="확정문자 복사" getText={() => buildConfirmMessage(b)} />
+                          <CopyButton label="당일문자 복사" getText={() => buildReminderMessage(b)} />
+                        </div>
                       </div>
                     );
                   })}
@@ -1208,10 +1291,17 @@ export default function AdminPage() {
                     {names.length > 0 && (
                       <div className="flex flex-wrap gap-2 pl-[72px]">
                         {names.map((b) => (
-                          <span key={b.id} className="text-xs px-2.5 py-1 rounded-lg"
-                            style={{ background: "var(--color-bg-base)", color: "var(--color-text-secondary)" }}>
-                            {b.name} <span style={{ color: "var(--color-text-muted)" }}>· {maskContact(b.contact)}</span>
-                          </span>
+                          <div key={b.id} className="flex flex-col gap-1.5 px-2.5 py-2 rounded-lg"
+                            style={{ background: "var(--color-bg-base)" }}>
+                            <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
+                              {b.name} <span style={{ color: "var(--color-text-muted)" }}>· {maskContact(b.contact)}</span>
+                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <CopyButton label="전화" getText={() => b.contact} />
+                              <CopyButton label="확정문자" getText={() => buildConfirmMessage(b)} />
+                              <CopyButton label="당일문자" getText={() => buildReminderMessage(b)} />
+                            </div>
+                          </div>
                         ))}
                       </div>
                     )}
