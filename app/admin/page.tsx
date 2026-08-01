@@ -61,8 +61,8 @@ function formatKoreanDateTime(dateStr: string, timeStr: string) {
   return `${mm}월 ${dd}일 ${days[dow]}요일 ${hh}시 ${min}분`;
 }
 
-function buildReminderMessage(b: { selected_date: string; selected_time: string }) {
-  return `회원님 안녕하세요!
+function buildReminderMessage(b: { name: string; selected_date: string; selected_time: string }) {
+  return `${b.name}회원님 안녕하세요!
 신림 그린짐 PT 입니다~^^
 ${formatKoreanDateTime(b.selected_date, b.selected_time)} 무료체험 수업이 있으십니다.
 
@@ -74,44 +74,58 @@ ${formatKoreanDateTime(b.selected_date, b.selected_time)} 무료체험 수업이
 그럼 곧 뵙겠습니다! 감사합니다!🤗🤗`;
 }
 
-async function copyToClipboard(text: string) {
+async function copyToClipboard(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text);
-    return;
+    return true;
   } catch {
     // 클립보드 API 미지원/권한 없는 환경 대비 fallback
   }
   const textarea = document.createElement("textarea");
   textarea.value = text;
   textarea.style.position = "fixed";
+  textarea.style.top = "0";
+  textarea.style.left = "0";
   textarea.style.opacity = "0";
   document.body.appendChild(textarea);
+  textarea.focus();
   textarea.select();
-  document.execCommand("copy");
+  textarea.setSelectionRange(0, text.length); // iOS Safari에서 select()만으로는 선택되지 않는 경우 대비
+  let ok = false;
+  try {
+    ok = document.execCommand("copy");
+  } catch {
+    ok = false;
+  }
   document.body.removeChild(textarea);
+  return ok;
 }
 
 function CopyButton({ label, getText }: { label: string; getText: () => string }) {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
 
   const handleClick = async (e: { stopPropagation: () => void }) => {
     e.stopPropagation();
-    await copyToClipboard(getText());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    const ok = await copyToClipboard(getText());
+    setState(ok ? "copied" : "failed");
+    setTimeout(() => setState("idle"), ok ? 1500 : 2500);
   };
+
+  const color =
+    state === "copied" ? "var(--color-brand-accent)" : state === "failed" ? "#ff6464" : "var(--color-text-muted)";
+  const text = state === "copied" ? "복사됨 ✓" : state === "failed" ? "복사 실패 (직접 선택해주세요)" : label;
 
   return (
     <button
       onClick={handleClick}
       className="text-xs px-2 py-1 rounded-md border font-medium transition-colors shrink-0"
       style={{
-        borderColor: copied ? "var(--color-brand-accent)" : "var(--color-border)",
-        color: copied ? "var(--color-brand-accent)" : "var(--color-text-muted)",
+        borderColor: state === "idle" ? "var(--color-border)" : color,
+        color,
         background: "transparent",
       }}
     >
-      {copied ? "복사됨 ✓" : label}
+      {text}
     </button>
   );
 }
@@ -641,7 +655,7 @@ export default function AdminPage() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("overview");
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [bookingPeriod, setBookingPeriod] = useState<"today" | "week" | "month" | "range">("today");
+  const [bookingPeriod, setBookingPeriod] = useState<"today" | "week" | "month" | "range">("week");
   const [bookingRangeStart, setBookingRangeStart] = useState("");
   const [bookingRangeEnd, setBookingRangeEnd] = useState("");
   const [search, setSearch] = useState("");
