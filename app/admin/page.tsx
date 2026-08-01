@@ -340,13 +340,38 @@ function getPeriodRange(key: PeriodKey): { start: string; end: string } | null {
 // ─── 방문자 탭 ────────────────────────────────────────────────────
 type VisitorData = { today: number; yesterday: number; total: number; week: number; month: number; trend: { date: string; count: number }[] } | null;
 
-function VisitorsTab({ visitors, todayBookings }: { visitors: VisitorData; todayBookings: number }) {
+function VisitorsTab({ visitors, bookings }: { visitors: VisitorData; bookings: Booking[] }) {
+  const [convPeriod, setConvPeriod] = useState<"today" | "week" | "month">("today");
+
   if (!visitors) return <p className="text-sm py-8 text-center" style={{ color: "var(--color-text-muted)" }}>불러오는 중...</p>;
 
   const { today, yesterday, total, week, month, trend } = visitors;
   const maxTrend = Math.max(...trend.map((t) => t.count), 1);
-  const convRate = today > 0 && todayBookings > 0 ? Math.round((todayBookings / today) * 100) : null;
   const dayLabels = ["일", "월", "화", "수", "목", "금", "토"];
+
+  // 신규 예약 = 접수 시각(created_at) 기준 (선택한 수업 날짜가 아니라 "언제 방문해서 예약했는지" 기준)
+  const now = new Date();
+  const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
+  weekStart.setHours(0, 0, 0, 0);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const confirmedBookings = bookings.filter((b) => b.status !== "cancelled");
+  const newBookingsSince = (from: Date) =>
+    confirmedBookings.filter((b) => {
+      const t = new Date(b.created_at).getTime();
+      return !isNaN(t) && t >= from.getTime();
+    }).length;
+
+  const periodData = {
+    today: { label: "오늘", visitors: today, newBookings: newBookingsSince(todayStart) },
+    week: { label: "이번 주", visitors: week, newBookings: newBookingsSince(weekStart) },
+    month: { label: "이번 달", visitors: month, newBookings: newBookingsSince(monthStart) },
+  } as const;
+
+  const { visitors: periodVisitors, newBookings: periodBookings } = periodData[convPeriod];
+  const convRate = periodVisitors > 0 && periodBookings > 0 ? Math.round((periodBookings / periodVisitors) * 100) : null;
 
   const card = (label: string, value: string | number, sub?: string, accent?: boolean) => (
     <div className="p-5 rounded-2xl" style={{ background: "var(--color-bg-surface)", border: `1px solid ${accent ? "rgba(200,255,0,0.3)" : "var(--color-border)"}` }}>
@@ -404,12 +429,29 @@ function VisitorsTab({ visitors, todayBookings }: { visitors: VisitorData; today
 
         {/* 전환 지표 */}
         <div className="p-5 rounded-2xl space-y-4" style={{ background: "var(--color-bg-surface)", border: "1px solid var(--color-border)" }}>
-          <h3 className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>방문 → 예약 전환</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>방문 → 예약 전환</h3>
+            <div className="flex gap-1 p-1 rounded-lg" style={{ background: "var(--color-bg-base)" }}>
+              {(["today", "week", "month"] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setConvPeriod(p)}
+                  className="px-2.5 py-1 rounded-md text-xs font-medium transition-all"
+                  style={{
+                    background: convPeriod === p ? "var(--color-brand-accent)" : "transparent",
+                    color: convPeriod === p ? "#0A0A0A" : "var(--color-text-secondary)",
+                  }}
+                >
+                  {periodData[p].label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="space-y-5">
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>오늘 방문자</span>
-                <span className="text-sm font-semibold" style={{ color: "var(--color-text-primary)", fontVariantNumeric: "tabular-nums" }}>{today}명</span>
+                <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>랜딩페이지 방문자</span>
+                <span className="text-sm font-semibold" style={{ color: "var(--color-text-primary)", fontVariantNumeric: "tabular-nums" }}>{periodVisitors}명</span>
               </div>
               <div className="h-2 rounded-full" style={{ background: "var(--color-bg-base)" }}>
                 <div className="h-2 rounded-full" style={{ width: "100%", background: "#333" }} />
@@ -417,18 +459,18 @@ function VisitorsTab({ visitors, todayBookings }: { visitors: VisitorData; today
             </div>
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>오늘 예약</span>
-                <span className="text-sm font-semibold" style={{ color: "var(--color-brand-accent)", fontVariantNumeric: "tabular-nums" }}>{todayBookings}명</span>
+                <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>신규 예약</span>
+                <span className="text-sm font-semibold" style={{ color: "var(--color-brand-accent)", fontVariantNumeric: "tabular-nums" }}>{periodBookings}명</span>
               </div>
               <div className="h-2 rounded-full" style={{ background: "var(--color-bg-base)" }}>
                 <div
                   className="h-2 rounded-full"
-                  style={{ width: today > 0 ? `${Math.min(Math.round((todayBookings / today) * 100), 100)}%` : "0%", background: "var(--color-brand-accent)" }}
+                  style={{ width: periodVisitors > 0 ? `${Math.min(Math.round((periodBookings / periodVisitors) * 100), 100)}%` : "0%", background: "var(--color-brand-accent)" }}
                 />
               </div>
             </div>
             <div className="pt-2" style={{ borderTop: "1px solid var(--color-border)" }}>
-              <p className="text-xs mb-1" style={{ color: "var(--color-text-muted)" }}>오늘 전환율</p>
+              <p className="text-xs mb-1" style={{ color: "var(--color-text-muted)" }}>{periodData[convPeriod].label} 전환율</p>
               <p className="font-heading font-black text-3xl" style={{ color: convRate !== null ? "var(--color-brand-accent)" : "var(--color-text-muted)" }}>
                 {convRate !== null ? `${convRate}%` : "—"}
               </p>
@@ -1255,7 +1297,7 @@ export default function AdminPage() {
               })}
             </div>
 
-            {statsSubTab === "visitors" && <VisitorsTab visitors={visitors} todayBookings={todayCount} />}
+            {statsSubTab === "visitors" && <VisitorsTab visitors={visitors} bookings={allBookings} />}
             {statsSubTab === "bookings" && <StatsTab bookings={allBookings} />}
           </div>
         )}
