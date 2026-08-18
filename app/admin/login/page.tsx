@@ -40,7 +40,7 @@ export default function AdminLoginPage() {
             Admin
           </p>
           <h1 className="font-heading font-black text-2xl text-text-primary">
-            하이프트레이닝클럽
+            신림 그린짐 그룹PT
           </h1>
           <p className="text-text-muted text-sm mt-1">관리자 로그인</p>
         </div>

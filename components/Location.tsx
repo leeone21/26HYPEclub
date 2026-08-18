@@ -62,8 +62,6 @@ export default function Location() {
           </div>
         </div>
 
-        {/* 그린짐 표기 (최소 노출) */}
-        <p className="text-text-muted text-xs mt-5 text-center">그린짐 신림점 운영</p>
       </div>
     </section>
   );

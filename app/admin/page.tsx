@@ -992,7 +992,7 @@ export default function AdminPage() {
         <div className="flex items-center gap-3">
           <span className="text-accent font-bold text-sm tracking-widest uppercase">Admin</span>
           <span className="text-text-muted text-sm">|</span>
-          <span className="text-text-primary font-semibold text-sm">하이프트레이닝클럽</span>
+          <span className="text-text-primary font-semibold text-sm">신림 그린짐 그룹PT</span>
         </div>
         <button onClick={handleLogout} className="text-text-muted text-sm hover:text-text-secondary transition-colors">로그아웃</button>
       </header>

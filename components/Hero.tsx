@@ -31,7 +31,7 @@ export default function Hero({ onCtaClick }: HeroProps) {
 
         {/* 브랜드명 */}
         <p className="text-text-secondary text-base mb-3 font-normal">
-          하이프트레이닝클럽
+          신림 그린짐 그룹PT
         </p>
 
         {/* 메인 헤드라인 */}

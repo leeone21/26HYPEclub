@@ -4,12 +4,12 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://26-hyp-eclub.vercel.app"),
-  title: "하이프트레이닝클럽 | 신림 그룹PT 무료체험",
+  title: "신림 그린짐 PT | 그룹 PT 체험",
   description:
     "신림역 근처 하이브리드 그룹PT — 혼자 하는 운동이 지겨웠다면 함께 하세요. 첫 수업 무료체험 신청 가능.",
-  keywords: ["신림 그룹PT", "신림 하이브리드 트레이닝", "신림역 운동 모임", "하이프트레이닝클럽"],
+  keywords: ["신림 그룹PT", "신림 하이브리드 트레이닝", "신림역 운동 모임", "신림 그린짐 그룹PT"],
   openGraph: {
-    title: "하이프트레이닝클럽 | 신림 그룹PT 무료체험",
+    title: "신림 그린짐 PT | 그룹 PT 체험",
     description:
       "신림 지역 20~30대와 함께하는 하이브리드 트레이닝. 첫 수업 무료체험 신청하기.",
     type: "website",

@@ -111,8 +111,7 @@ export default function Home() {
         className="text-center py-8 px-5 text-text-muted text-xs border-t"
         style={{ borderColor: "var(--color-border)" }}
       >
-        <p className="mb-1 text-text-secondary font-medium">하이프트레이닝클럽</p>
-        <p className="mb-1">그린짐 신림점 운영</p>
+        <p className="mb-1 text-text-secondary font-medium">신림 그린짐 그룹PT</p>
         <p className="mb-1">관악구 남부순환로 180길 6 최강타워 2층</p>
         <p>
           <a href="tel:01081324550" className="hover:text-accent transition-colors">010-8132-4550</a>

@@ -18,7 +18,7 @@ export async function sendBookingNotification(record: {
   const dateStr = `${parseInt(m)}/${parseInt(d)} (${days[day]}) ${record.selected_time}`;
 
   const { error } = await resend.emails.send({
-    from: "하이프트레이닝클럽 <onboarding@resend.dev>",
+    from: "신림 그린짐 그룹PT <onboarding@resend.dev>",
     to,
     subject: `[새 예약] ${record.name} · ${dateStr}`,
     html: `
@@ -29,7 +29,7 @@ export async function sendBookingNotification(record: {
           <tr><td style="padding:8px 0;color:#666;">연락처</td><td style="padding:8px 0;font-weight:600;">${record.contact}</td></tr>
           <tr><td style="padding:8px 0;color:#666;">일시</td><td style="padding:8px 0;font-weight:600;">${dateStr}</td></tr>
         </table>
-        <p style="margin-top:20px;font-size:13px;color:#999;">하이프트레이닝클럽 예약 시스템</p>
+        <p style="margin-top:20px;font-size:13px;color:#999;">신림 그린짐 그룹PT 예약 시스템</p>
       </div>
     `,
   });
