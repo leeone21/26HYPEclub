@@ -108,13 +108,16 @@ export default function Home() {
 
       {/* 푸터 */}
       <footer
-        className="text-center py-8 px-5 text-text-muted text-xs border-t"
+        className="text-center pt-8 pb-28 md:pb-8 px-5 text-text-muted text-xs border-t"
         style={{ borderColor: "var(--color-border)" }}
       >
         <p className="mb-1 text-text-secondary font-medium">신림 그린짐 그룹PT</p>
         <p className="mb-1">관악구 남부순환로 180길 6 최강타워 2층</p>
-        <p>
-          <a href="tel:01081324550" className="hover:text-accent transition-colors">010-8132-4550</a>
+        <p className="mt-3 pt-3 border-t text-text-muted/80" style={{ borderColor: "var(--color-border)" }}>
+          상호명: 그린짐 PT · 대표자: 이창원 · 사업자등록번호: 833-05-02854
+        </p>
+        <p className="mt-1 text-text-muted/80">
+          대표자 연락처: <a href="tel:01097502301" className="hover:text-accent transition-colors">010-9750-2301</a>
         </p>
       </footer>
 
