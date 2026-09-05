@@ -81,7 +81,7 @@ export default function Lp2Shell({ variant, children }: Lp2ShellProps) {
       </div>
 
       <footer
-        className="text-center pt-8 pb-28 md:pb-8 px-5 text-text-muted text-xs border-t"
+        className="text-center pt-8 pb-28 px-5 text-text-muted text-xs border-t"
         style={{ borderColor: "var(--color-border)" }}
       >
         <p className="mb-1 text-text-secondary font-medium">신림 그린짐 그룹PT</p>
@@ -94,11 +94,13 @@ export default function Lp2Shell({ variant, children }: Lp2ShellProps) {
         </p>
       </footer>
 
-      {/* 모바일 하단 고정 CTA — 페이지에 #hero-cta-trigger가 있을 때만 동작 */}
+      {/* 플로팅 CTA — 처음 진입 시부터 데스크톱/모바일 모두에서 떠 있는다 */}
       <StickyCtaBar
         label="0원 체험 예약하기 →"
         onCtaClick={() => scrollToBooking("sticky_bar")}
         hidden={bookingCompleted || formInView}
+        alwaysVisible
+        showOnDesktop
       />
     </>
   );
