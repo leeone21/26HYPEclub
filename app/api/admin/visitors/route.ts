@@ -4,6 +4,9 @@ import { kstTodayStr, addDaysStr, dayOfWeekStr } from "@/lib/date";
 
 export const dynamic = "force-dynamic";
 
+/** app/lp2/{a,b,c}가 track-visit에 보내는 variant 값과 일치해야 한다. */
+const LP2_VARIANTS = ["lp2-a", "lp2-b", "lp2-c"] as const;
+
 export async function GET() {
   const kv = await getKV();
   const today = kstTodayStr();
@@ -27,25 +30,47 @@ export async function GET() {
 
   // 필요한 날짜 전체를 중복 없이 한 번에 조회
   const dateList = Array.from(new Set([today, yesterday, ...last7, ...monthDays]));
-  const keys = ["visits:total", ...dateList.map((d) => `visits:daily:${d}`)];
-  const results = await Promise.all(keys.map((k) => kv.get(k)));
 
-  const totalRaw = results[0];
-  const dailyMap: Record<string, number> = {};
-  dateList.forEach((d, i) => { dailyMap[d] = parseInt(results[i + 1] ?? "0", 10); });
+  /** prefix("visits" 또는 "visits:variant:lp2-a") 하나에 대한 총/일별 카운트 조회 */
+  const readCounts = async (prefix: string) => {
+    const keys = [`${prefix}:total`, ...dateList.map((d) => `${prefix}:daily:${d}`)];
+    const results = await Promise.all(keys.map((k) => kv.get(k)));
+    const dailyMap: Record<string, number> = {};
+    dateList.forEach((d, i) => { dailyMap[d] = parseInt(results[i + 1] ?? "0", 10); });
+    const sum = (days: string[]) => days.reduce((s, d) => s + (dailyMap[d] ?? 0), 0);
+    return {
+      total: parseInt(results[0] ?? "0", 10),
+      today: dailyMap[today] ?? 0,
+      yesterday: dailyMap[yesterday] ?? 0,
+      week: sum(weekDays),
+      month: sum(monthDays),
+      dailyMap,
+    };
+  };
 
-  const weekCount = weekDays.reduce((s, d) => s + (dailyMap[d] ?? 0), 0);
-  const monthCount = monthDays.reduce((s, d) => s + (dailyMap[d] ?? 0), 0);
+  // 메인 랜딩 + LP2 변형(A/B/C)을 각각 조회. 변형 방문은 메인 지표에 섞이지 않는다.
+  const [main, ...variantCounts] = await Promise.all([
+    readCounts("visits"),
+    ...LP2_VARIANTS.map((v) => readCounts(`visits:variant:${v}`)),
+  ]);
 
-  const trend = last7.map((d) => ({ date: d, count: dailyMap[d] ?? 0 }));
+  const trend = last7.map((d) => ({ date: d, count: main.dailyMap[d] ?? 0 }));
+
+  const variants = Object.fromEntries(
+    LP2_VARIANTS.map((v, i) => {
+      const { total, today: t, week, month } = variantCounts[i];
+      return [v, { total, today: t, week, month }];
+    })
+  );
 
   return NextResponse.json({
     success: true,
-    total: parseInt(totalRaw ?? "0", 10),
-    today: dailyMap[today] ?? 0,
-    yesterday: dailyMap[yesterday] ?? 0,
-    week: weekCount,
-    month: monthCount,
+    total: main.total,
+    today: main.today,
+    yesterday: main.yesterday,
+    week: main.week,
+    month: main.month,
     trend,
+    variants,
   });
 }

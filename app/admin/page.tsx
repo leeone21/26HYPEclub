@@ -15,6 +15,8 @@ interface Booking {
   outcome?: string;
   no_show_reason?: string;
   no_show_memo?: string;
+  /** 랜딩 버전 (lp2-a/b/c). 메인 페이지 예약은 빈 값. */
+  variant?: string;
 }
 
 interface Settings {
@@ -338,14 +340,26 @@ function getPeriodRange(key: PeriodKey): { start: string; end: string } | null {
 }
 
 // ─── 방문자 탭 ────────────────────────────────────────────────────
-type VisitorData = { today: number; yesterday: number; total: number; week: number; month: number; trend: { date: string; count: number }[] } | null;
+type VariantCounts = { total: number; today: number; week: number; month: number };
+type VisitorData = {
+  today: number; yesterday: number; total: number; week: number; month: number;
+  trend: { date: string; count: number }[];
+  /** LP2 A/B/C 변형별 방문 (키: lp2-a / lp2-b / lp2-c) */
+  variants?: Record<string, VariantCounts>;
+} | null;
+
+const LP2_VARIANT_LABELS: Record<string, string> = {
+  "lp2-a": "A안 · 실제 사진",
+  "lp2-b": "B안 · 후기 결과",
+  "lp2-c": "C안 · 초보 안심",
+};
 
 function VisitorsTab({ visitors, bookings }: { visitors: VisitorData; bookings: Booking[] }) {
   const [convPeriod, setConvPeriod] = useState<"today" | "week" | "month">("today");
 
   if (!visitors) return <p className="text-sm py-8 text-center" style={{ color: "var(--color-text-muted)" }}>불러오는 중...</p>;
 
-  const { today, yesterday, total, week, month, trend } = visitors;
+  const { today, yesterday, total, week, month, trend, variants } = visitors;
   const maxTrend = Math.max(...trend.map((t) => t.count), 1);
   const dayLabels = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -358,11 +372,24 @@ function VisitorsTab({ visitors, bookings }: { visitors: VisitorData; bookings: 
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const confirmedBookings = bookings.filter((b) => b.status !== "cancelled");
-  const newBookingsSince = (from: Date) =>
-    confirmedBookings.filter((b) => {
-      const t = new Date(b.created_at).getTime();
-      return !isNaN(t) && t >= from.getTime();
-    }).length;
+  const isSince = (b: Booking, from: Date) => {
+    const t = new Date(b.created_at).getTime();
+    return !isNaN(t) && t >= from.getTime();
+  };
+  // 메인 페이지 전환율에는 LP2 예약을 섞지 않는다 (LP2 방문도 메인 방문에 안 섞이므로 분모/분자 일치)
+  const mainBookings = confirmedBookings.filter((b) => !b.variant);
+  const newBookingsSince = (from: Date) => mainBookings.filter((b) => isSince(b, from)).length;
+
+  const periodStart = { today: todayStart, week: weekStart, month: monthStart } as const;
+  const variantRows = Object.entries(variants ?? {}).map(([key, counts]) => {
+    const visitsInPeriod = counts[convPeriod];
+    const bookingsInPeriod = confirmedBookings.filter(
+      (b) => b.variant === key && isSince(b, periodStart[convPeriod])
+    ).length;
+    const rate = visitsInPeriod > 0 ? Math.round((bookingsInPeriod / visitsInPeriod) * 100) : null;
+    return { key, label: LP2_VARIANT_LABELS[key] ?? key, visits: visitsInPeriod, bookings: bookingsInPeriod, rate };
+  });
+  const bestRate = Math.max(0, ...variantRows.map((r) => r.rate ?? 0));
 
   const periodData = {
     today: { label: "오늘", visitors: today, newBookings: newBookingsSince(todayStart) },
@@ -478,6 +505,46 @@ function VisitorsTab({ visitors, bookings }: { visitors: VisitorData; bookings: 
           </div>
         </div>
       </div>
+
+      {/* LP2 A/B/C 비교 — 기간은 위 전환 지표의 오늘/이번 주/이번 달 선택을 따른다 */}
+      {variantRows.length > 0 && (
+        <div className="p-5 rounded-2xl space-y-4" style={{ background: "var(--color-bg-surface)", border: "1px solid var(--color-border)" }}>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>LP2 A/B/C 비교</h3>
+            <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>{periodData[convPeriod].label} · /lp2/a·b·c</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm" style={{ fontVariantNumeric: "tabular-nums" }}>
+              <thead>
+                <tr className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                  <th className="text-left font-medium pb-2">버전</th>
+                  <th className="text-right font-medium pb-2">방문</th>
+                  <th className="text-right font-medium pb-2">예약</th>
+                  <th className="text-right font-medium pb-2">전환율</th>
+                </tr>
+              </thead>
+              <tbody>
+                {variantRows.map((r) => {
+                  const isBest = r.rate !== null && r.rate > 0 && r.rate === bestRate;
+                  return (
+                    <tr key={r.key} style={{ borderTop: "1px solid var(--color-border)" }}>
+                      <td className="py-2.5" style={{ color: "var(--color-text-primary)" }}>
+                        {r.label}
+                        <span className="ml-2 text-xs" style={{ color: "var(--color-text-muted)" }}>{r.key}</span>
+                      </td>
+                      <td className="py-2.5 text-right" style={{ color: "var(--color-text-secondary)" }}>{r.visits}</td>
+                      <td className="py-2.5 text-right" style={{ color: "var(--color-text-secondary)" }}>{r.bookings}</td>
+                      <td className="py-2.5 text-right font-semibold" style={{ color: isBest ? "var(--color-brand-accent)" : r.rate !== null ? "var(--color-text-primary)" : "var(--color-text-muted)" }}>
+                        {r.rate !== null ? `${r.rate}%` : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -724,7 +791,7 @@ export default function AdminPage() {
   const [todayCount, setTodayCount] = useState(0);
   const [weekCount, setWeekCount] = useState(0);
   const [monthConvRate, setMonthConvRate] = useState<number | null>(null);
-  const [visitors, setVisitors] = useState<{ today: number; yesterday: number; total: number; week: number; month: number; trend: { date: string; count: number }[] } | null>(null);
+  const [visitors, setVisitors] = useState<VisitorData>(null);
   const [statsSubTab, setStatsSubTab] = useState<"visitors" | "bookings">("visitors");
 
   // ── 수동 예약 추가 모달 ───────────────────────────────────────

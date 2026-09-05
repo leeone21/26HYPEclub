@@ -12,6 +12,7 @@ export async function appendBookingToSheet(record: {
   utm_medium: string;
   utm_campaign: string;
   referrer: string;
+  variant?: string;
 }) {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   const key = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
@@ -39,11 +40,12 @@ export async function appendBookingToSheet(record: {
     record.utm_medium,
     record.utm_campaign,
     record.referrer,
+    record.variant ?? "", // L열: 랜딩 버전 (lp2-a/b/c, 메인은 빈칸)
   ];
 
   await sheets.spreadsheets.values.append({
     spreadsheetId,
-    range: "2607 랜딩페이지 예약!A:K",
+    range: "2607 랜딩페이지 예약!A:L",
     valueInputOption: "USER_ENTERED",
     requestBody: { values: [row] },
   });

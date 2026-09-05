@@ -5,9 +5,11 @@ import { useEffect, useState } from "react";
 interface StickyCtaBarProps {
   onCtaClick?: () => void;
   hidden?: boolean;
+  /** 버튼 문구. 페이지의 메인 CTA와 맞춘다. */
+  label?: string;
 }
 
-export default function StickyCtaBar({ onCtaClick, hidden }: StickyCtaBarProps) {
+export default function StickyCtaBar({ onCtaClick, hidden, label = "무료체험 예약하기 →" }: StickyCtaBarProps) {
   const [visible, setVisible] = useState(false);
 
   // Hero 섹션을 지나면 표시
@@ -40,7 +42,7 @@ export default function StickyCtaBar({ onCtaClick, hidden }: StickyCtaBarProps) 
           onClick={onCtaClick}
           className="btn-cta w-full py-4 text-base font-bold"
         >
-          무료체험 예약하기 →
+          {label}
         </button>
       </div>
     </div>

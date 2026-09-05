@@ -19,6 +19,8 @@ interface BookingRecord {
   utm_medium: string;
   utm_campaign: string;
   referrer: string;
+  /** 랜딩 버전 (lp2-a/b/c 등). 메인 페이지 예약은 빈 문자열. */
+  variant: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -110,6 +112,7 @@ export async function POST(request: NextRequest) {
       utm_medium: body.utm_medium ?? "",
       utm_campaign: body.utm_campaign ?? "",
       referrer: body.referrer ?? "",
+      variant: typeof body.variant === "string" ? body.variant : "",
     };
 
     // KV에 저장

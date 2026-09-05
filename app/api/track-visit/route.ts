@@ -11,8 +11,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, skipped: true });
     }
 
+    // LP2 등 별도 랜딩은 variant를 보낸다. 본 페이지 전환율 지표와 섞이지 않도록
+    // 변형별 키에만 집계한다. (본문 없이 호출하는 기존 페이지는 variant 없음)
+    const variant = await request
+      .json()
+      .then((b) => (typeof b?.variant === "string" ? b.variant : null))
+      .catch(() => null);
+
     const kv = await getKV();
-    await Promise.all([kv.incr("visits:total"), kv.incr(`visits:daily:${kstTodayStr()}`)]);
+    const today = kstTodayStr();
+    const prefix = variant ? `visits:variant:${variant}` : "visits";
+    await Promise.all([kv.incr(`${prefix}:total`), kv.incr(`${prefix}:daily:${today}`)]);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ ok: false }, { status: 500 });

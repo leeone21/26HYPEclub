@@ -20,6 +20,20 @@ interface BookingFormProps {
   onFormSubmit?: () => void;
   onDateSelect?: (date: string) => void;
   onTimeSelect?: (date: string, time: string) => void;
+  /** 랜딩 버전 식별자 (예: "lp2-a"). 예약 레코드에 함께 저장돼 버전별 전환율 비교에 쓰인다. */
+  variant?: string;
+}
+
+/** 광고 유입 추적용 — URL의 utm 파라미터와 referrer를 예약 레코드에 실어 보낸다. */
+function getAttribution() {
+  if (typeof window === "undefined") return {};
+  const p = new URLSearchParams(window.location.search);
+  return {
+    utm_source: p.get("utm_source") ?? "",
+    utm_medium: p.get("utm_medium") ?? "",
+    utm_campaign: p.get("utm_campaign") ?? "",
+    referrer: document.referrer ?? "",
+  };
 }
 
 export default function BookingForm({
@@ -27,6 +41,7 @@ export default function BookingForm({
   onFormSubmit,
   onDateSelect,
   onTimeSelect,
+  variant,
 }: BookingFormProps) {
   const [form, setForm] = useState<FormState>({
     name: "",
@@ -128,6 +143,8 @@ export default function BookingForm({
           selectedDate: form.selectedDate,
           selectedTime: form.selectedTime,
           consentAgreed: form.consentAgreed,
+          variant: variant ?? "",
+          ...getAttribution(),
         }),
       });
       const data = await res.json();
