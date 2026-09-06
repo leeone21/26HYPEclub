@@ -4,8 +4,9 @@ import { kstTodayStr, addDaysStr, dayOfWeekStr } from "@/lib/date";
 
 export const dynamic = "force-dynamic";
 
-/** app/lp2/{a,b,c}가 track-visit에 보내는 variant 값과 일치해야 한다. */
-const LP2_VARIANTS = ["lp2-a", "lp2-b", "lp2-c"] as const;
+/** app/lp2(+ a,b,c)가 track-visit에 보내는 variant 값과 일치해야 한다.
+ *  "lp2"는 실제 광고(당근 등)가 연결된 기본 랜딩, a/b/c는 A/B 테스트용 변형. */
+const LP2_VARIANTS = ["lp2", "lp2-a", "lp2-b", "lp2-c"] as const;
 
 export async function GET() {
   const kv = await getKV();

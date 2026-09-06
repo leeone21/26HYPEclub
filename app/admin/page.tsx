@@ -349,6 +349,7 @@ type VisitorData = {
 } | null;
 
 const LP2_VARIANT_LABELS: Record<string, string> = {
+  "lp2": "실사용 랜딩 · 당근 광고 연결",
   "lp2-a": "A안 · 실제 사진",
   "lp2-b": "B안 · 후기 결과",
   "lp2-c": "C안 · 초보 안심",
@@ -510,8 +511,8 @@ function VisitorsTab({ visitors, bookings }: { visitors: VisitorData; bookings: 
       {variantRows.length > 0 && (
         <div className="p-5 rounded-2xl space-y-4" style={{ background: "var(--color-bg-surface)", border: "1px solid var(--color-border)" }}>
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>LP2 A/B/C 비교</h3>
-            <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>{periodData[convPeriod].label} · /lp2/a·b·c</span>
+            <h3 className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>LP2 랜딩별 방문·예약</h3>
+            <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>{periodData[convPeriod].label} · /lp2, /lp2/a·b·c</span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm" style={{ fontVariantNumeric: "tabular-nums" }}>
