@@ -344,8 +344,10 @@ type VariantCounts = { total: number; today: number; week: number; month: number
 type VisitorData = {
   today: number; yesterday: number; total: number; week: number; month: number;
   trend: { date: string; count: number }[];
-  /** LP2 A/B/C 변형별 방문 (키: lp2-a / lp2-b / lp2-c) */
+  /** LP2 A/B/C 변형별 방문 (키: lp2 / lp2-a / lp2-b / lp2-c) */
   variants?: Record<string, VariantCounts>;
+  /** 메인 + LP2 전 변형 합산 — 현황(overview) 탭 카드용 */
+  allSources?: { today: number; yesterday: number; total: number; week: number; month: number };
 } | null;
 
 const LP2_VARIANT_LABELS: Record<string, string> = {
@@ -1138,29 +1140,29 @@ export default function AdminPage() {
               )}
             </div>
 
-            {/* 방문자 수 */}
+            {/* 방문자 수 — 메인 + LP2 전체 합산 (광고가 /lp2로 연결되므로 메인 단독 수치는 의미 없음) */}
             <div className="grid grid-cols-3 gap-4">
               <div className="p-5 rounded-2xl" style={{ background: "var(--color-bg-surface)", border: "1px solid rgba(200,255,0,0.2)" }}>
                 <p className="text-text-muted text-xs mb-2">오늘 방문자</p>
                 <p className="font-heading font-black text-3xl" style={{ color: "var(--color-brand-accent)" }}>
-                  {visitors?.today ?? "—"}<span className="text-base font-normal text-text-muted ml-1">명</span>
+                  {visitors?.allSources?.today ?? "—"}<span className="text-base font-normal text-text-muted ml-1">명</span>
                 </p>
-                {visitors && <p className="text-text-muted text-xs mt-1">어제 {visitors.yesterday}명</p>}
+                {visitors?.allSources && <p className="text-text-muted text-xs mt-1">어제 {visitors.allSources.yesterday}명</p>}
               </div>
               <div className="p-5 rounded-2xl" style={{ background: "var(--color-bg-surface)", border: "1px solid var(--color-border)" }}>
                 <p className="text-text-muted text-xs mb-2">누적 방문자</p>
                 <p className="font-heading font-black text-3xl text-text-primary">
-                  {visitors?.total ?? "—"}<span className="text-base font-normal text-text-muted ml-1">명</span>
+                  {visitors?.allSources?.total ?? "—"}<span className="text-base font-normal text-text-muted ml-1">명</span>
                 </p>
               </div>
               <div className="p-5 rounded-2xl" style={{ background: "var(--color-bg-surface)", border: "1px solid var(--color-border)" }}>
                 <p className="text-text-muted text-xs mb-2">방문→예약 전환</p>
                 <p className="font-heading font-black text-3xl text-text-primary">
-                  {visitors && visitors.total > 0 && todayCount > 0
-                    ? `${Math.round((todayCount / visitors.today) * 100)}%`
+                  {visitors?.allSources && visitors.allSources.today > 0 && todayCount > 0
+                    ? `${Math.round((todayCount / visitors.allSources.today) * 100)}%`
                     : "—"}
                 </p>
-                <p className="text-text-muted text-xs mt-1">오늘 기준</p>
+                <p className="text-text-muted text-xs mt-1">오늘 기준 · 메인+LP2 합산</p>
               </div>
             </div>
 

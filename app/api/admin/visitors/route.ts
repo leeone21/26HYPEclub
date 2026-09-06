@@ -64,6 +64,19 @@ export async function GET() {
     })
   );
 
+  // 현황(overview) 탭용 — 메인 랜딩 + LP2 전 변형을 합산한 "전체 유입" 수치.
+  // 광고가 /lp2로 연결된 이후엔 메인 단독 수치는 현황 카드로서 의미가 없어 별도로 제공한다.
+  const sumAcross = (key: "total" | "today" | "yesterday" | "week" | "month") =>
+    main[key] + variantCounts.reduce((s, v) => s + v[key], 0);
+
+  const allSources = {
+    total: sumAcross("total"),
+    today: sumAcross("today"),
+    yesterday: sumAcross("yesterday"),
+    week: sumAcross("week"),
+    month: sumAcross("month"),
+  };
+
   return NextResponse.json({
     success: true,
     total: main.total,
@@ -73,5 +86,6 @@ export async function GET() {
     month: main.month,
     trend,
     variants,
+    allSources,
   });
 }
