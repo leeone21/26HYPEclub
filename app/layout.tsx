@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
+import { META_PIXEL_ID } from "@/lib/fbq";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://26-hyp-eclub.vercel.app"),
@@ -41,6 +42,23 @@ export default function RootLayout({
             y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
           })(window, document, "clarity", "script", "xquqjrutrm");
         `}} />
+        {/* Meta 픽셀 — 광고 전환 최적화용. Lead 이벤트는 예약 폼 제출 시 발화 (lib/fbq.ts) */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          !function(f,b,e,v,n,t,s)
+          {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+          n.queue=[];t=b.createElement(e);t.async=!0;
+          t.src=v;s=b.getElementsByTagName(e)[0];
+          s.parentNode.insertBefore(t,s)}(window, document,'script',
+          'https://connect.facebook.net/en_US/fbevents.js');
+          fbq('init', '${META_PIXEL_ID}');
+          fbq('track', 'PageView');
+        `}} />
+        <noscript>
+          <img height="1" width="1" style={{ display: "none" }} alt=""
+            src={`https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1`} />
+        </noscript>
         {/* Pretendard — 한국어 가독성 최적화 웹폰트 */}
         <link
           rel="stylesheet"

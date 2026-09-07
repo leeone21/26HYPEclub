@@ -3,6 +3,7 @@
 import { useRef, useEffect, useCallback, useState } from "react";
 import { track } from "@vercel/analytics";
 import { gtagEvent } from "@/lib/gtag";
+import { fbqEvent } from "@/lib/fbq";
 import Hero from "@/components/Hero";
 import Problem from "@/components/Problem";
 import Program from "@/components/Program";
@@ -100,7 +101,7 @@ export default function Home() {
       <div id="section-booking" ref={bookingRef}>
         <BookingForm
           onFormStart={() => { track("form_started"); gtagEvent("form_start"); }}
-          onFormSubmit={() => { track("form_submitted"); gtagEvent("form_submitted"); setBookingCompleted(true); }}
+          onFormSubmit={() => { track("form_submitted"); gtagEvent("form_submitted"); fbqEvent("Lead", { content_name: "group_pt_trial" }); setBookingCompleted(true); }}
           onDateSelect={(date) => track("date_selected", { date })}
           onTimeSelect={(date, time) => track("time_selected", { date, time })}
         />

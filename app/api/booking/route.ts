@@ -18,6 +18,8 @@ interface BookingRecord {
   utm_source: string;
   utm_medium: string;
   utm_campaign: string;
+  /** 소재 식별자 (메타 ad.name 등). 2026-09-07 추가 */
+  utm_content: string;
   referrer: string;
   /** 랜딩 버전 (lp2-a/b/c 등). 메인 페이지 예약은 빈 문자열. */
   variant: string;
@@ -111,6 +113,7 @@ export async function POST(request: NextRequest) {
       utm_source: body.utm_source ?? "",
       utm_medium: body.utm_medium ?? "",
       utm_campaign: body.utm_campaign ?? "",
+      utm_content: body.utm_content ?? "",
       referrer: body.referrer ?? "",
       variant: typeof body.variant === "string" ? body.variant : "",
     };

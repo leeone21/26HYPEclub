@@ -32,6 +32,7 @@ function getAttribution() {
     utm_source: p.get("utm_source") ?? "",
     utm_medium: p.get("utm_medium") ?? "",
     utm_campaign: p.get("utm_campaign") ?? "",
+    utm_content: p.get("utm_content") ?? "",
     referrer: document.referrer ?? "",
   };
 }

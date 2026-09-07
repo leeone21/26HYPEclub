@@ -10,6 +10,7 @@ import {
 } from "react";
 import { track } from "@vercel/analytics";
 import { gtagEvent } from "@/lib/gtag";
+import { fbqEvent } from "@/lib/fbq";
 import BookingForm from "@/components/BookingForm";
 import StickyCtaBar from "@/components/StickyCtaBar";
 
@@ -73,6 +74,7 @@ export default function Lp2Shell({ variant, children }: Lp2ShellProps) {
           onFormSubmit={() => {
             track("form_submitted", { variant });
             gtagEvent("form_submitted", { variant });
+            fbqEvent("Lead", { content_name: "group_pt_trial", variant });
             setBookingCompleted(true);
           }}
           onDateSelect={(date) => track("date_selected", { date, variant })}
