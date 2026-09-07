@@ -56,7 +56,7 @@ export default function Location() {
             <div>
               <p className="text-text-secondary text-xs mb-1 uppercase tracking-wide">문의</p>
               <p className="text-text-primary font-medium">
-                010-8132-4550
+                010-9750-2301
               </p>
             </div>
           </div>

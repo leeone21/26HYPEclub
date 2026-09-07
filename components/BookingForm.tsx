@@ -220,12 +220,12 @@ export default function BookingForm({
 
           {/* 연락처 */}
           <a
-            href="tel:01081324550"
+            href="tel:01097502301"
             className="flex items-center justify-center gap-2 mt-5 py-3 rounded-xl transition-opacity active:opacity-70"
             style={{ background: "var(--color-bg-surface)" }}
           >
             <span className="text-text-muted text-sm">문의</span>
-            <span className="font-bold text-xl" style={{ color: "var(--color-text-primary)" }}>010-8132-4550</span>
+            <span className="font-bold text-xl" style={{ color: "var(--color-text-primary)" }}>010-9750-2301</span>
           </a>
         </div>
       </section>
