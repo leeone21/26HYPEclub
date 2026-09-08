@@ -405,6 +405,7 @@ const LP2_VARIANT_LABELS: Record<string, string> = {
   "lp2-a": "A안 · 실제 사진",
   "lp2-b": "B안 · 후기 결과",
   "lp2-c": "C안 · 초보 안심",
+  "lp-m": "메타(인스타·페이스북) 광고 연결",
 };
 
 function VisitorsTab({ visitors, bookings }: { visitors: VisitorData; bookings: Booking[] }) {

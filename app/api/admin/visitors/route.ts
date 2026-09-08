@@ -7,9 +7,9 @@ export const dynamic = "force-dynamic";
 // 반환하는 현상을 확인(2026-09-08) — revalidate=0으로 명시해 매 요청 새로 읽는다.
 export const revalidate = 0;
 
-/** app/lp2(+ a,b,c)가 track-visit에 보내는 variant 값과 일치해야 한다.
- *  "lp2"는 실제 광고(당근 등)가 연결된 기본 랜딩, a/b/c는 A/B 테스트용 변형. */
-const LP2_VARIANTS = ["lp2", "lp2-a", "lp2-b", "lp2-c"] as const;
+/** app/lp2(+ a,b,c), app/lp-m이 track-visit에 보내는 variant 값과 일치해야 한다.
+ *  "lp2"는 당근이 연결된 기본 랜딩, a/b/c는 A/B 테스트용 변형, "lp-m"은 메타 전용 랜딩(주소로 채널을 분리). */
+const LP2_VARIANTS = ["lp2", "lp2-a", "lp2-b", "lp2-c", "lp-m"] as const;
 
 /** track-visit/route.ts의 화이트리스트와 반드시 일치해야 한다. "기타"·"direct"는 그쪽에서 생성. */
 const TRAFFIC_SOURCES = ["daangn", "meta", "naver", "google", "instagram", "기타", "direct"] as const;
