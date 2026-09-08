@@ -17,7 +17,12 @@ interface Booking {
   no_show_memo?: string;
   /** 랜딩 버전 (lp2-a/b/c). 메인 페이지 예약은 빈 값. */
   variant?: string;
+  /** 예약 경로 ("online": 자체 예약폼, "naver": 네이버예약 수동 등록). 값이 없으면 online으로 취급. */
+  source?: string;
 }
+
+const sourceLabel = (b: Booking) =>
+  b.source === "naver" ? "네이버예약" : b.source === "onsite" ? "현장예약" : "온라인 예약";
 
 interface Settings {
   "max-per-slot": string;
@@ -210,6 +215,29 @@ function CrmRow({ booking, onUpdate }: { booking: Booking; onUpdate: (id: string
     );
   };
 
+  const setSource = async (val: "online" | "naver" | "onsite") => {
+    if ((booking.source ?? "online") === val) return;
+    await update({ source: val });
+  };
+
+  const sourceBtn = (val: "online" | "naver" | "onsite", label: string, activeColor: string, activeBg: string) => {
+    const isActive = (booking.source ?? "online") === val;
+    return (
+      <button
+        onClick={() => setSource(val)}
+        disabled={saving}
+        className={btnBase}
+        style={{
+          background: isActive ? activeBg : "transparent",
+          borderColor: isActive ? activeColor : "var(--color-border)",
+          color: isActive ? activeColor : "var(--color-text-muted)",
+        }}
+      >
+        {label}
+      </button>
+    );
+  };
+
   const outcomeBtn = (val: "registered" | "not_registered", label: string, activeColor: string, activeBg: string) => {
     const isActive = booking.outcome === val;
     const disabled = booking.attended !== "yes";
@@ -233,13 +261,23 @@ function CrmRow({ booking, onUpdate }: { booking: Booking; onUpdate: (id: string
 
   return (
     <tr>
-      <td colSpan={8} style={{ background: "var(--color-bg-surface)", padding: "10px 16px 10px 44px", borderBottom: "1px solid var(--color-border)" }}>
+      <td colSpan={9} style={{ background: "var(--color-bg-surface)", padding: "10px 16px 10px 44px", borderBottom: "1px solid var(--color-border)" }}>
         <div className="flex items-center gap-4 flex-wrap">
           {/* 참석 여부 */}
           <div className="flex items-center gap-1.5">
             <span className="text-xs" style={{ color: "var(--color-text-muted)", minWidth: 48 }}>참석</span>
             {attendedBtn("yes", "참석", "var(--color-brand-accent)", "rgba(200,255,0,0.12)")}
             {attendedBtn("no", "미참석", "#ff6464", "rgba(255,100,100,0.12)")}
+          </div>
+
+          <div style={{ width: 1, height: 20, background: "var(--color-border)" }} />
+
+          {/* 예약 경로 */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs" style={{ color: "var(--color-text-muted)", minWidth: 48 }}>예약경로</span>
+            {sourceBtn("online", "온라인", "var(--color-brand-accent)", "rgba(200,255,0,0.12)")}
+            {sourceBtn("naver", "네이버", "#03c75a", "rgba(3,199,90,0.12)")}
+            {sourceBtn("onsite", "현장", "#ff9f43", "rgba(255,159,67,0.12)")}
           </div>
 
           <div style={{ width: 1, height: 20, background: "var(--color-border)" }} />
@@ -584,6 +622,11 @@ function StatsTab({ bookings }: { bookings: Booking[] }) {
   const registered = confirmed.filter((b) => b.outcome === "registered").length;
   const notRegistered = confirmed.filter((b) => b.outcome === "not_registered").length;
 
+  // 예약 경로별 집계 (온라인 자체 예약폼 vs 네이버예약/현장 수동 등록)
+  const naverCount = confirmed.filter((b) => b.source === "naver").length;
+  const onsiteCount = confirmed.filter((b) => b.source === "onsite").length;
+  const onlineCount = total - naverCount - onsiteCount;
+
   const attendRate = total > 0 ? Math.round((attended / total) * 100) : 0;
   const convRate = attended > 0 ? Math.round((registered / attended) * 100) : 0;
   const totalConvRate = total > 0 ? Math.round((registered / total) * 100) : 0;
@@ -695,6 +738,22 @@ function StatsTab({ bookings }: { bookings: Booking[] }) {
         {card("최종 전환율", `${totalConvRate}%`, `예약 → 등록`, registered > 0)}
       </div>
 
+      {/* 예약 경로별 */}
+      <div
+        className="p-5 rounded-2xl space-y-4"
+        style={{ background: "var(--color-bg-surface)", border: "1px solid var(--color-border)" }}
+      >
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>예약 경로별</h3>
+          <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>총 {total}건</span>
+        </div>
+        <div className="space-y-3">
+          {bar("온라인 예약", onlineCount, total, "var(--color-brand-accent)")}
+          {bar("네이버예약", naverCount, total, "#03c75a")}
+          {bar("현장예약", onsiteCount, total, "#ff9f43")}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {/* 퍼널 */}
         <div
@@ -770,6 +829,7 @@ export default function AdminPage() {
   const [bookingPeriod, setBookingPeriod] = useState<"today" | "week" | "month" | "range">("week");
   const [bookingRangeStart, setBookingRangeStart] = useState("");
   const [bookingRangeEnd, setBookingRangeEnd] = useState("");
+  const [sourceFilter, setSourceFilter] = useState<"all" | "online" | "naver" | "onsite">("all");
   const [search, setSearch] = useState("");
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -799,7 +859,7 @@ export default function AdminPage() {
 
   // ── 수동 예약 추가 모달 ───────────────────────────────────────
   const [showAddModal, setShowAddModal] = useState(false);
-  const [addForm, setAddForm] = useState({ name: "", contact: "", date: toLocalDateStr(new Date()), time: "19:00" });
+  const [addForm, setAddForm] = useState({ name: "", contact: "", date: toLocalDateStr(new Date()), time: "19:00", source: "online" });
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState("");
 
@@ -937,12 +997,13 @@ export default function AdminPage() {
         selectedDate: addForm.date,
         selectedTime: addForm.time,
         consentAgreed: true,
+        source: addForm.source,
       }),
     });
     const data = await res.json();
     if (data.success) {
       setShowAddModal(false);
-      setAddForm({ name: "", contact: "", date: toLocalDateStr(new Date()), time: "19:00" });
+      setAddForm({ name: "", contact: "", date: toLocalDateStr(new Date()), time: "19:00", source: "online" });
       await loadBookings();
     } else {
       setAddError(data.error ?? "예약 추가 실패");
@@ -1001,9 +1062,9 @@ export default function AdminPage() {
 
   const handleExportCSV = () => {
     const rows = [
-      ["이름", "연락처", "날짜", "시간", "상태", "참석", "등록", "비등록사유", "메모", "예약일시"].join(","),
+      ["이름", "연락처", "날짜", "시간", "예약경로", "상태", "참석", "등록", "비등록사유", "메모", "예약일시"].join(","),
       ...filteredBookings.map((b) =>
-        [b.name, b.contact, b.selected_date, b.selected_time, b.status,
+        [b.name, b.contact, b.selected_date, b.selected_time, sourceLabel(b), b.status,
           b.attended ?? "", b.outcome ?? "", b.no_show_reason ?? "", b.no_show_memo ?? "", b.created_at].join(",")
       ),
     ];
@@ -1029,6 +1090,7 @@ export default function AdminPage() {
     if (range) {
       if (b.selected_date < range.start || b.selected_date > range.end) return false;
     }
+    if (sourceFilter !== "all" && (b.source ?? "online") !== sourceFilter) return false;
     if (!search) return true;
     const q = search.toLowerCase();
     return b.name.includes(q) || b.contact.includes(q);
@@ -1277,6 +1339,23 @@ export default function AdminPage() {
                 </div>
               )}
 
+              <div className="flex gap-2 flex-wrap">
+                {([["all", "전체"], ["online", "온라인 예약"], ["naver", "네이버예약"], ["onsite", "현장예약"]] as const).map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => setSourceFilter(key)}
+                    className="px-3.5 py-1 rounded-full text-xs font-medium border transition-all"
+                    style={{
+                      background: sourceFilter === key ? "var(--color-brand-accent)" : "transparent",
+                      borderColor: sourceFilter === key ? "var(--color-brand-accent)" : "var(--color-border)",
+                      color: sourceFilter === key ? "#0A0A0A" : "var(--color-text-secondary)",
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
               <input type="text" placeholder="이름 또는 연락처 검색" value={search} onChange={(e) => setSearch(e.target.value)}
                 className="w-full rounded-xl px-4 py-2.5 text-sm border outline-none"
                 style={{ background: "var(--color-bg-surface)", borderColor: "var(--color-border)", color: "var(--color-text-primary)" }} />
@@ -1295,7 +1374,7 @@ export default function AdminPage() {
                 <table className="w-full text-sm" style={{ tableLayout: "fixed" }}>
                   <thead>
                     <tr style={{ background: "var(--color-bg-surface)" }}>
-                      {["이름", "연락처", "날짜", "시간", "예약상태", "체험결과", ""].map((h) => (
+                      {["이름", "연락처", "날짜", "시간", "예약경로", "예약상태", "체험결과", ""].map((h) => (
                         <th key={h} className="px-4 py-3 text-left font-semibold text-text-muted text-xs">{h}</th>
                       ))}
                     </tr>
@@ -1315,6 +1394,14 @@ export default function AdminPage() {
                             <td className="px-4 py-3 font-mono text-xs" style={{ color: "var(--color-text-muted)" }}>{maskContact(b.contact)}</td>
                             <td className="px-4 py-3" style={{ color: "var(--color-text-secondary)" }}>{formatDate(b.selected_date)}</td>
                             <td className="px-4 py-3" style={{ color: "var(--color-text-secondary)" }}>{b.selected_time}</td>
+                            <td className="px-4 py-3">
+                              {b.source === "naver"
+                                ? <span className="text-xs px-2 py-0.5 rounded" style={{ background: "rgba(3,199,90,0.12)", color: "#03c75a" }}>네이버예약</span>
+                                : b.source === "onsite"
+                                ? <span className="text-xs px-2 py-0.5 rounded" style={{ background: "rgba(255,159,67,0.12)", color: "#ff9f43" }}>현장예약</span>
+                                : <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>온라인</span>
+                              }
+                            </td>
                             <td className="px-4 py-3">
                               {b.status === "cancelled"
                                 ? <span className="text-xs px-2 py-0.5 rounded" style={{ background: "rgba(255,100,100,0.12)", color: "#ff6464" }}>예약취소</span>
@@ -1581,6 +1668,19 @@ export default function AdminPage() {
                     <option>21:00</option>
                   </select>
                 </div>
+              </div>
+              <div>
+                <label className="block text-xs mb-1.5" style={{ color: "var(--color-text-muted)" }}>예약 경로</label>
+                <select
+                  value={addForm.source}
+                  onChange={(e) => setAddForm((f) => ({ ...f, source: e.target.value }))}
+                  className="w-full rounded-xl px-3 py-2.5 text-sm border outline-none"
+                  style={{ background: "var(--color-bg-base)", borderColor: "var(--color-border)", color: "var(--color-text-primary)" }}
+                >
+                  <option value="online">온라인 예약</option>
+                  <option value="naver">네이버예약</option>
+                  <option value="onsite">현장예약</option>
+                </select>
               </div>
             </div>
 

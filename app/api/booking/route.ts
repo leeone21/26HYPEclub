@@ -23,6 +23,8 @@ interface BookingRecord {
   referrer: string;
   /** 랜딩 버전 (lp2-a/b/c 등). 메인 페이지 예약은 빈 문자열. */
   variant: string;
+  /** 예약 경로 ("online": 자체 예약폼, "naver": 네이버예약 수동 등록, "onsite": 현장 방문/전화 수동 등록). 기본값 online. */
+  source: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -116,6 +118,7 @@ export async function POST(request: NextRequest) {
       utm_content: body.utm_content ?? "",
       referrer: body.referrer ?? "",
       variant: typeof body.variant === "string" ? body.variant : "",
+      source: body.source === "naver" || body.source === "onsite" ? body.source : "online",
     };
 
     // KV에 저장

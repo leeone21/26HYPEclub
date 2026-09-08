@@ -47,7 +47,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const allowed = ["attended", "outcome", "no_show_reason", "no_show_memo"];
+    const allowed = ["attended", "outcome", "no_show_reason", "no_show_memo", "source"];
     const updates: Record<string, string> = {};
 
     for (const key of allowed) {
