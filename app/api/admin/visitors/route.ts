@@ -3,6 +3,9 @@ import { getKV } from "@/lib/kv";
 import { kstTodayStr, addDaysStr, dayOfWeekStr } from "@/lib/date";
 
 export const dynamic = "force-dynamic";
+// KV 조회(@vercel/kv 내부 fetch)가 Next.js Data Cache에 캐시돼 실측치보다 오래된 값을
+// 반환하는 현상을 확인(2026-09-08) — revalidate=0으로 명시해 매 요청 새로 읽는다.
+export const revalidate = 0;
 
 /** app/lp2(+ a,b,c)가 track-visit에 보내는 variant 값과 일치해야 한다.
  *  "lp2"는 실제 광고(당근 등)가 연결된 기본 랜딩, a/b/c는 A/B 테스트용 변형. */
