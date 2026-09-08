@@ -13,15 +13,29 @@ export async function POST(request: NextRequest) {
 
     // LP2 등 별도 랜딩은 variant를 보낸다. 본 페이지 전환율 지표와 섞이지 않도록
     // 변형별 키에만 집계한다. (본문 없이 호출하는 기존 페이지는 variant 없음)
-    const variant = await request
-      .json()
-      .then((b) => (typeof b?.variant === "string" ? b.variant : null))
-      .catch(() => null);
+    const body = await request.json().catch(() => null);
+    const variant = typeof body?.variant === "string" ? body.variant : null;
+
+    // utm_source로 유입 채널을 구분한다. 화이트리스트 밖 값·미지정은 광고비 채널과
+    // 섞이지 않도록 별도 버킷으로 묶는다 (KV 키가 임의 문자열로 무한정 늘어나는 것도 방지).
+    const KNOWN_SOURCES = ["daangn", "meta", "naver", "google", "instagram"] as const;
+    const rawSource = typeof body?.source === "string" ? body.source : null;
+    const source = rawSource
+      ? (KNOWN_SOURCES as readonly string[]).includes(rawSource)
+        ? rawSource
+        : "기타"
+      : "direct";
 
     const kv = await getKV();
     const today = kstTodayStr();
     const prefix = variant ? `visits:variant:${variant}` : "visits";
-    await Promise.all([kv.incr(`${prefix}:total`), kv.incr(`${prefix}:daily:${today}`)]);
+    const sourcePrefix = `visits:source:${source}`;
+    await Promise.all([
+      kv.incr(`${prefix}:total`),
+      kv.incr(`${prefix}:daily:${today}`),
+      kv.incr(`${sourcePrefix}:total`),
+      kv.incr(`${sourcePrefix}:daily:${today}`),
+    ]);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ ok: false }, { status: 500 });

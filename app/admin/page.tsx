@@ -386,7 +386,19 @@ type VisitorData = {
   variants?: Record<string, VariantCounts>;
   /** 메인 + LP2 전 변형 합산 — 현황(overview) 탭 카드용 */
   allSources?: { today: number; yesterday: number; total: number; week: number; month: number };
+  /** utm_source별 방문 (당근/메타/네이버/구글/인스타/기타/direct). 2026-09-08부터 수집. */
+  channels?: Record<string, VariantCounts>;
 } | null;
+
+const CHANNEL_LABELS: Record<string, string> = {
+  daangn: "당근",
+  meta: "메타(인스타·페이스북)",
+  naver: "네이버",
+  google: "구글",
+  instagram: "인스타그램",
+  "기타": "기타 (알 수 없는 유입)",
+  direct: "직접 유입 (UTM 없음)",
+};
 
 const LP2_VARIANT_LABELS: Record<string, string> = {
   "lp2": "실사용 랜딩 · 당근 광고 연결",
@@ -400,7 +412,7 @@ function VisitorsTab({ visitors, bookings }: { visitors: VisitorData; bookings: 
 
   if (!visitors) return <p className="text-sm py-8 text-center" style={{ color: "var(--color-text-muted)" }}>불러오는 중...</p>;
 
-  const { today, yesterday, total, week, month, trend, variants } = visitors;
+  const { today, yesterday, total, week, month, trend, variants, channels } = visitors;
   const maxTrend = Math.max(...trend.map((t) => t.count), 1);
   const dayLabels = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -431,6 +443,11 @@ function VisitorsTab({ visitors, bookings }: { visitors: VisitorData; bookings: 
     return { key, label: LP2_VARIANT_LABELS[key] ?? key, visits: visitsInPeriod, bookings: bookingsInPeriod, rate };
   });
   const bestRate = Math.max(0, ...variantRows.map((r) => r.rate ?? 0));
+
+  const channelRows = Object.entries(channels ?? {})
+    .map(([key, counts]) => ({ key, label: CHANNEL_LABELS[key] ?? key, visits: counts[convPeriod] }))
+    .filter((r) => r.visits > 0)
+    .sort((a, b) => b.visits - a.visits);
 
   const periodData = {
     today: { label: "오늘", visitors: today, newBookings: newBookingsSince(todayStart) },
@@ -581,6 +598,34 @@ function VisitorsTab({ visitors, bookings }: { visitors: VisitorData; bookings: 
                     </tr>
                   );
                 })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* 유입 채널(UTM)별 방문 — 예약 전환은 아직 이 화면에 안 붙어 있다 (구글시트 M열 utm_content로만 확인 가능) */}
+      {channelRows.length > 0 && (
+        <div className="p-5 rounded-2xl space-y-4" style={{ background: "var(--color-bg-surface)", border: "1px solid var(--color-border)" }}>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>유입 채널별 방문</h3>
+            <span className="text-xs" style={{ color: "var(--color-text-muted)" }}>{periodData[convPeriod].label} · utm_source, 2026-09-08부터 수집</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm" style={{ fontVariantNumeric: "tabular-nums" }}>
+              <thead>
+                <tr className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                  <th className="text-left font-medium pb-2">채널</th>
+                  <th className="text-right font-medium pb-2">방문</th>
+                </tr>
+              </thead>
+              <tbody>
+                {channelRows.map((r) => (
+                  <tr key={r.key} style={{ borderTop: "1px solid var(--color-border)" }}>
+                    <td className="py-2.5" style={{ color: "var(--color-text-primary)" }}>{r.label}</td>
+                    <td className="py-2.5 text-right" style={{ color: "var(--color-text-secondary)" }}>{r.visits}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

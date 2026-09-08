@@ -8,6 +8,9 @@ export const dynamic = "force-dynamic";
  *  "lp2"는 실제 광고(당근 등)가 연결된 기본 랜딩, a/b/c는 A/B 테스트용 변형. */
 const LP2_VARIANTS = ["lp2", "lp2-a", "lp2-b", "lp2-c"] as const;
 
+/** track-visit/route.ts의 화이트리스트와 반드시 일치해야 한다. "기타"·"direct"는 그쪽에서 생성. */
+const TRAFFIC_SOURCES = ["daangn", "meta", "naver", "google", "instagram", "기타", "direct"] as const;
+
 export async function GET() {
   const kv = await getKV();
   const today = kstTodayStr();
@@ -49,11 +52,14 @@ export async function GET() {
     };
   };
 
-  // 메인 랜딩 + LP2 변형(A/B/C)을 각각 조회. 변형 방문은 메인 지표에 섞이지 않는다.
-  const [main, ...variantCounts] = await Promise.all([
+  // 메인 랜딩 + LP2 변형(A/B/C) + 유입 채널(utm_source)을 각각 조회.
+  const [main, ...rest] = await Promise.all([
     readCounts("visits"),
     ...LP2_VARIANTS.map((v) => readCounts(`visits:variant:${v}`)),
+    ...TRAFFIC_SOURCES.map((s) => readCounts(`visits:source:${s}`)),
   ]);
+  const variantCounts = rest.slice(0, LP2_VARIANTS.length);
+  const sourceCounts = rest.slice(LP2_VARIANTS.length);
 
   const trend = last7.map((d) => ({ date: d, count: main.dailyMap[d] ?? 0 }));
 
@@ -61,6 +67,14 @@ export async function GET() {
     LP2_VARIANTS.map((v, i) => {
       const { total, today: t, week, month } = variantCounts[i];
       return [v, { total, today: t, week, month }];
+    })
+  );
+
+  // utm_source별 방문 수 — 2026-09-08부터 수집(그 전 방문은 전부 direct로 잡힌다).
+  const channels = Object.fromEntries(
+    TRAFFIC_SOURCES.map((s, i) => {
+      const { total, today: t, week, month } = sourceCounts[i];
+      return [s, { total, today: t, week, month }];
     })
   );
 
@@ -86,6 +100,7 @@ export async function GET() {
     month: main.month,
     trend,
     variants,
+    channels,
     allSources,
   });
 }

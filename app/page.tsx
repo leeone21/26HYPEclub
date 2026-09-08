@@ -19,9 +19,14 @@ export default function Home() {
   const bookingRef = useRef<HTMLDivElement>(null);
   const [bookingCompleted, setBookingCompleted] = useState(false);
 
-  // 페이지 방문 카운트
+  // 페이지 방문 카운트 (utm_source로 채널 구분)
   useEffect(() => {
-    fetch("/api/track-visit", { method: "POST" }).catch(() => {});
+    const source = new URLSearchParams(window.location.search).get("utm_source") ?? undefined;
+    fetch("/api/track-visit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ source }),
+    }).catch(() => {});
   }, []);
 
   // 섹션 진입 애니메이션 + 도달 추적

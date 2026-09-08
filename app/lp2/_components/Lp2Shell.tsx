@@ -49,11 +49,13 @@ export default function Lp2Shell({ variant, children }: Lp2ShellProps) {
   }, []);
 
   // LP2 방문은 변형별로 따로 집계 (본 페이지 전환율 지표를 오염시키지 않음)
+  // utm_source도 함께 보내 방문 단계에서부터 채널(당근/메타)을 구분한다.
   useEffect(() => {
+    const source = new URLSearchParams(window.location.search).get("utm_source") ?? undefined;
     fetch("/api/track-visit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ variant }),
+      body: JSON.stringify({ variant, source }),
     }).catch(() => {});
   }, [variant]);
 
